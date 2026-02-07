@@ -1,16 +1,23 @@
-import Productivity from "./pages/Productivity";
-import Inventory from "./pages/Inventory";
-import StudyMaterials from "./pages/StudyMaterials";
-import Assignments from "./pages/Assignments";
+import { useEffect, useState } from "react";
 
 function App() {
+  const [backendStatus, setBackendStatus] = useState("Checking...");
+
+  useEffect(() => {
+    fetch("http://localhost:5000/health")
+      .then((res) => res.json())
+      .then((data) => {
+        setBackendStatus(data.status);
+      })
+      .catch(() => {
+        setBackendStatus("Backend not reachable");
+      });
+  }, []);
+
   return (
     <div>
       <h1>Student Life Dashboard</h1>
-      <Productivity />
-      <Inventory />
-      <StudyMaterials />
-      <Assignments />
+      <p>Backend status: {backendStatus}</p>
     </div>
   );
 }
