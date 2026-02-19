@@ -1,25 +1,23 @@
-import { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "./features/productivity/context/ThemeContext";
+import Layout from "./features/productivity/layout/Layout";
 
-function App() {
-  const [backendStatus, setBackendStatus] = useState("Checking...");
+import Dashboard from "./features/productivity/pages/Dashboard";
+import Tasks from "./features/productivity/pages/Tasks";
+import Habits from "./features/productivity/pages/Habits";
+import Analytics from "./features/productivity/pages/Analytics";
 
-  useEffect(() => {
-    fetch("http://localhost:5000/health")
-      .then((res) => res.json())
-      .then((data) => {
-        setBackendStatus(data.status);
-      })
-      .catch(() => {
-        setBackendStatus("Backend not reachable");
-      });
-  }, []);
-
+export default function App() {
   return (
-    <div>
-      <h1>Student Life Dashboard</h1>
-      <p>Backend status: {backendStatus}</p>
-    </div>
+    <ThemeProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/tasks" element={<Tasks />} />
+          <Route path="/habits" element={<Habits />} />
+          <Route path="/analytics" element={<Analytics />} />
+        </Routes>
+      </Layout>
+    </ThemeProvider>
   );
 }
-
-export default App;
