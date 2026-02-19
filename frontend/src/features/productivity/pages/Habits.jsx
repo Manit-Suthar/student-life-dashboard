@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
-  Plus,
-  CheckCircle2,
-  Circle,
-  Trash2,
-  Pencil,
-  X,
-  Undo2,
-  Flame,
-  MoreHorizontal,
+  Plus, CheckCircle2, Circle, Trash2, Pencil, X, Undo2, Flame, MoreHorizontal,
 } from "lucide-react";
 
 const STORAGE_KEY = "productivity_habits_v1";
@@ -29,7 +21,7 @@ const FILTERS = [
 const SORTS = [
   { value: "newest", label: "Newest" },
   { value: "streak", label: "Highest streak" },
-  { value: "name", label: "Name (A\u2013Z)" },
+  { value: "name", label: "Name (A–Z)" },
   { value: "recent_done", label: "Recently done" },
 ];
 
@@ -80,19 +72,18 @@ export default function Habits() {
   const ws = weekStart(new Date());
 
   useEffect(() => {
-    const saved = localStorage.getItem("productivity_habits");
-    if (saved) setHabits(JSON.parse(saved));
-  }, []);
-  useEffect(() => { localStorage.setItem("productivity_habits", JSON.stringify(habits)); }, [habits]);
-
-  useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) { const p = JSON.parse(raw); setHabits(Array.isArray(p) ? p : defaultHabits); }
       else setHabits(defaultHabits);
     } catch { setHabits(defaultHabits); }
   }, []);
-  useEffect(() => { if (habits.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(habits)); }, [habits]);
+  useEffect(() => { 
+    if (habits.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+      window.dispatchEvent(new CustomEvent("productivity-data-change", { detail: { type: "habits" } }));
+    }
+  }, [habits]);
 
   const summary = useMemo(() => {
     const done = habits.filter((h) => (h.completions || []).includes(todayYMD)).length;
@@ -160,132 +151,149 @@ export default function Habits() {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="fade-in">
+      {/* Header — matches Assignments pattern */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-6)" }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Habits</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Build consistency with streaks and daily check-ins.</p>
+          <h1 style={{ fontSize: "var(--font-size-3xl)", fontWeight: 600, marginBottom: "var(--space-2)" }}>Habits</h1>
+          <p style={{ color: "var(--text-secondary)" }}>Build consistency with streaks and daily check-ins</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-150"
-          style={{ background: "var(--accent-500)" }} onClick={openAdd}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-700)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-500)")}
-        ><Plus size={18} /> Add Habit</button>
+        <button className="btn btn-primary btn-lg" onClick={openAdd}>
+          <Plus size={18} />
+          <span>Add Habit</span>
+        </button>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard title="Done Today" value={`${summary.done}/${summary.total}`} />
-        <StatCard title="Longest Streak" value={`${summary.longest}d`} />
-        <StatCard title="Active Streaks" value={`${summary.active}`} />
-        <StatCard title="This Week" value="Mon \u2192 Sun" />
+      {/* Summary Stats — reusing stat-card from assignments.css */}
+      <div className="dashboard-stats">
+        <div className="stat-card">
+          <div className="stat-card-content">
+            <div>
+              <div className="stat-number">{summary.done}/{summary.total}</div>
+              <div className="stat-label">Done Today</div>
+            </div>
+            <div className="stat-icon"><CheckCircle2 size={22} /></div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-content">
+            <div>
+              <div className="stat-number">{summary.longest}d</div>
+              <div className="stat-label">Longest Streak</div>
+            </div>
+            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}><Flame size={22} /></div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-content">
+            <div>
+              <div className="stat-number">{summary.active}</div>
+              <div className="stat-label">Active Streaks</div>
+            </div>
+            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}><CheckCircle2 size={22} /></div>
+          </div>
+        </div>
       </div>
 
-      {/* Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <CtrlCard label="Filter">
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} style={selS()}>
-            {FILTERS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-        </CtrlCard>
-        <CtrlCard label="Sort">
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={selS()}>
-            {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-        </CtrlCard>
+      {/* Filters — reusing filter-tabs from assignments.css */}
+      <div className="filter-tabs" style={{ marginBottom: "var(--space-4)" }}>
+        {FILTERS.map((f) => (
+          <button key={f.value} className={`filter-tab ${filter === f.value ? "active" : ""}`} onClick={() => setFilter(f.value)}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sort */}
+      <div style={{ marginBottom: "var(--space-6)" }}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-select" style={{ maxWidth: 240 }}>
+          {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
       </div>
 
       {/* Habit Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "var(--space-4)" }}>
         {filtered.map((h) => {
           const doneToday = (h.completions || []).includes(todayYMD);
           const streak = h.goalType === "daily" ? calcStreak(new Set(h.completions || []), todayYMD) : 0;
           const wp = weekProg(h);
 
           return (
-            <div key={h.id} className="rounded-2xl p-4 transition-all duration-150 group"
-              style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-md)")}
-              onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-sm)")}
-            >
+            <div key={h.id} className="prod-item">
               {/* Top row */}
-              <div className="flex items-start justify-between gap-2">
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-2)" }}>
                 <div>
-                  <h3 className="font-medium text-sm" style={{ color: "var(--text)" }}>{h.name}</h3>
-                  <p className="text-xs mt-0.5" style={{ color: "var(--text-faint)" }}>
+                  <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--text-primary)" }}>{h.name}</h3>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "var(--space-1)" }}>
                     {h.goalType === "daily" ? "Daily habit" : `${wp?.target || 0}x / week`}
                   </p>
                 </div>
                 <HabitMenu onEdit={() => openEdit(h)} onDelete={() => deleteHabit(h.id)} />
               </div>
 
-              {h.notes && <p className="text-xs mt-2 line-clamp-2" style={{ color: "var(--text-muted)" }}>{h.notes}</p>}
+              {h.notes && <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "var(--space-2)" }}>{h.notes}</p>}
 
               {/* Badges */}
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flexWrap: "wrap", marginTop: "var(--space-3)" }}>
                 {h.goalType === "daily" ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}>
+                  <span className="badge badge-warning" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                     <Flame size={12} /> {streak} day streak
                   </span>
                 ) : (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: "var(--accent-50)", color: "var(--accent-500)" }}>
+                  <span className="badge badge-primary">
                     {wp?.done || 0}/{wp?.target || 0} this week
                   </span>
                 )}
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                  style={doneToday
-                    ? { background: "var(--success-bg)", color: "var(--success-text)" }
-                    : { background: "var(--hover-bg)", color: "var(--text-muted)" }
-                  }>
+                <span className={`badge ${doneToday ? "badge-success" : ""}`}>
                   {doneToday ? "Done today" : "Not done"}
                 </span>
               </div>
 
-              {/* Primary action: Mark done */}
-              <div className="mt-3 flex gap-2">
+              {/* Mark done */}
+              <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)" }}>
                 <button
                   onClick={() => markDone(h.id)} disabled={doneToday}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150"
-                  style={doneToday
-                    ? { background: "var(--success-bg)", color: "var(--success-text)", cursor: "not-allowed", opacity: 0.7 }
-                    : { background: "var(--success)", color: "#FFF" }}
+                  className={`prod-done-btn ${doneToday ? "completed" : ""}`}
+                  style={{ flex: 1, justifyContent: "center", ...(doneToday ? { cursor: "not-allowed", opacity: 0.7 } : {}) }}
                 >
                   {doneToday ? <CheckCircle2 size={16} /> : <Circle size={16} />}
                   {doneToday ? "Done" : "Mark done"}
                 </button>
                 <button onClick={() => undoDone(h.id)} disabled={!doneToday} title="Undo"
-                  className="px-2.5 py-2 rounded-xl transition-all duration-150"
-                  style={doneToday
-                    ? { border: "1px solid var(--border)", color: "var(--text-secondary)" }
-                    : { border: "1px solid var(--border)", color: "var(--text-faint)", cursor: "not-allowed", opacity: 0.4 }}
+                  className="btn btn-secondary"
+                  style={{ padding: "var(--space-2)", ...(!doneToday ? { cursor: "not-allowed", opacity: 0.4 } : {}) }}
                 ><Undo2 size={16} /></button>
               </div>
             </div>
           );
         })}
         {filtered.length === 0 && (
-          <div className="col-span-full text-sm text-center rounded-2xl p-8"
-            style={{ color: "var(--text-muted)", background: "var(--card)", border: "1px dashed var(--border-strong)" }}>
-            No habits yet. Add one to get started.
+          <div className="empty-state glass" style={{ gridColumn: "1 / -1" }}>
+            <div className="empty-state-icon"><CheckCircle2 size={48} /></div>
+            <h3 className="empty-state-title">No habits yet</h3>
+            <p className="empty-state-description">Add one to start building consistency.</p>
           </div>
         )}
       </div>
 
-      {/* Modals */}
-      {isAddOpen && <HabitModal title="Add Habit" submitLabel="Create" onClose={() => { setIsAddOpen(false); resetForm(); }} onSubmit={submitAdd}
-        formName={formName} setFormName={setFormName} formGoalType={formGoalType} setFormGoalType={setFormGoalType}
-        formWeeklyTarget={formWeeklyTarget} setFormWeeklyTarget={setFormWeeklyTarget} formNotes={formNotes} setFormNotes={setFormNotes} />}
-      {isEditOpen && <HabitModal title="Edit Habit" submitLabel="Save" onClose={() => { setIsEditOpen(false); resetForm(); }} onSubmit={submitEdit}
-        formName={formName} setFormName={setFormName} formGoalType={formGoalType} setFormGoalType={setFormGoalType}
-        formWeeklyTarget={formWeeklyTarget} setFormWeeklyTarget={setFormWeeklyTarget} formNotes={formNotes} setFormNotes={setFormNotes} />}
+      {/* Modals — reusing assignment modal classes */}
+      {isAddOpen && (
+        <HabitModal title="Add Habit" submitLabel="Create" onClose={() => { setIsAddOpen(false); resetForm(); }} onSubmit={submitAdd}
+          formName={formName} setFormName={setFormName} formGoalType={formGoalType} setFormGoalType={setFormGoalType}
+          formWeeklyTarget={formWeeklyTarget} setFormWeeklyTarget={setFormWeeklyTarget} formNotes={formNotes} setFormNotes={setFormNotes}
+        />
+      )}
+      {isEditOpen && (
+        <HabitModal title="Edit Habit" submitLabel="Save" onClose={() => { setIsEditOpen(false); resetForm(); }} onSubmit={submitEdit}
+          formName={formName} setFormName={setFormName} formGoalType={formGoalType} setFormGoalType={setFormGoalType}
+          formWeeklyTarget={formWeeklyTarget} setFormWeeklyTarget={setFormWeeklyTarget} formNotes={formNotes} setFormNotes={setFormNotes}
+        />
+      )}
     </div>
   );
 }
 
-/* ── Triple-dot menu ── */
+/* ── Overflow menu (reuses assignments.css classes) ── */
 function HabitMenu({ onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -296,116 +304,59 @@ function HabitMenu({ onEdit, onDelete }) {
   }, []);
 
   return (
-    <div className="relative flex-shrink-0" ref={ref}>
-      <button onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg transition-all duration-150 opacity-60 group-hover:opacity-100"
-        style={{ color: "var(--text-muted)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      ><MoreHorizontal size={18} /></button>
+    <div className="overflow-menu-wrapper" ref={ref}>
+      <button className="overflow-menu-trigger" onClick={() => setOpen(!open)}>
+        <MoreHorizontal size={18} />
+      </button>
       {open && (
-        <div className="absolute right-0 top-8 z-20 w-36 rounded-xl py-1 animate-scale-in"
-          style={{ background: "var(--modal)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}>
-          <button onClick={() => { onEdit(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-all duration-100"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          ><Pencil size={14} /> Edit</button>
-          <button onClick={() => { onDelete(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-all duration-100"
-            style={{ color: "var(--danger)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--danger-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          ><Trash2 size={14} /> Delete</button>
+        <div className="overflow-menu">
+          <button className="overflow-menu-item" onClick={() => { onEdit(); setOpen(false); }}>
+            <Pencil size={14} /> Edit
+          </button>
+          <button className="overflow-menu-item danger" onClick={() => { onDelete(); setOpen(false); }}>
+            <Trash2 size={14} /> Delete
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-/* ── Sub-components ── */
-function StatCard({ title, value }) {
-  return (
-    <div className="rounded-xl p-4 transition-all duration-150" style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}
-    >
-      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{title}</p>
-      <p className="text-xl font-bold mt-1.5" style={{ color: "var(--text)" }}>{value}</p>
-    </div>
-  );
-}
-
-function CtrlCard({ label, children }) {
-  return (
-    <div className="rounded-xl p-3 transition-all duration-150" style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}
-    >
-      <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function selS() {
-  return { marginTop: 6, width: "100%", padding: "7px 10px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--border)", color: "var(--text)", outline: "none", fontSize: 13 };
-}
-
+/* ── Modal (reuses assignments.css modal classes) ── */
 function HabitModal({ title, submitLabel, onClose, onSubmit, formName, setFormName, formGoalType, setFormGoalType, formWeeklyTarget, setFormWeeklyTarget, formNotes, setFormNotes }) {
-  const [showNotes, setShowNotes] = useState(Boolean(formNotes));
-  const inp = { marginTop: 4, width: "100%", padding: "9px 12px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--border)", color: "var(--text)", outline: "none", fontSize: 14 };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: "var(--overlay)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-lg rounded-2xl animate-scale-in" style={{ background: "var(--modal)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-          <h2 className="text-base font-semibold" style={{ color: "var(--text)" }}>{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: "var(--text-muted)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          ><X size={18} /></button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">{title}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
-        <div className="px-5 py-4 space-y-4">
-          <div>
-            <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Habit name</label>
-            <input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Morning walk" style={inp} autoFocus />
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Habit name *</label>
+            <input className="form-input" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Morning walk" autoFocus />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Goal type</label>
-              <select value={formGoalType} onChange={(e) => setFormGoalType(e.target.value)} style={inp}>
-                <option value="daily">Daily</option><option value="weekly">Weekly</option>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Goal type</label>
+              <select className="form-select" value={formGoalType} onChange={(e) => setFormGoalType(e.target.value)}>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
               </select>
             </div>
-            <div>
-              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Weekly target</label>
-              <input type="number" min={1} value={formWeeklyTarget} onChange={(e) => setFormWeeklyTarget(e.target.value)} style={inp} />
+            <div className="form-group">
+              <label className="form-label">Weekly target</label>
+              <input type="number" className="form-input" min={1} value={formWeeklyTarget} onChange={(e) => setFormWeeklyTarget(e.target.value)} />
             </div>
           </div>
-          {!showNotes ? (
-            <button onClick={() => setShowNotes(true)} className="text-xs font-medium transition-all duration-150" style={{ color: "var(--accent-500)" }}>
-              + Add notes
-            </button>
-          ) : (
-            <div>
-              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Notes (optional)</label>
-              <input value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="e.g. 30 minutes minimum" style={inp} />
-            </div>
-          )}
-        </div>
-        <div className="px-5 py-4 flex justify-end gap-2" style={{ borderTop: "1px solid var(--border)" }}>
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150"
-            style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >Cancel</button>
-          <button onClick={onSubmit} className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-150"
-            style={{ background: "var(--accent-500)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-700)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-500)")}
-          >{submitLabel}</button>
+          <div className="form-group">
+            <label className="form-label">Notes (optional)</label>
+            <textarea className="form-input form-textarea" value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="e.g. 30 minutes minimum" rows={3} />
+          </div>
+          <div className="form-actions">
+            <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button className="btn btn-primary" onClick={onSubmit}>{submitLabel}</button>
+          </div>
         </div>
       </div>
     </div>

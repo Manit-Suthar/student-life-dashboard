@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer,
   BarChart,
@@ -8,12 +7,19 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
-import { ListTodo, Repeat2, BarChart3, ArrowRight, TrendingUp, Target, Flame, Clock, Zap } from "lucide-react";
+import { TrendingUp, Target, Flame, Clock, Zap, Repeat2, CheckCircle2, AlertCircle } from "lucide-react";
 
 const TASK_KEYS = ["productivity_tasks_v1", "productivity_tasks", "tasks"];
 const HABIT_KEYS = ["productivity_habits_v1", "productivity_habits", "habits"];
+
+const COLORS = {
+  completed: "#10b981",
+  pending: "#f59e0b",
+  accent: "#6366f1",
+  error: "#ef4444",
+  purple: "#8b5cf6",
+};
 
 function readAnyKey(keys) {
   for (const k of keys) {
@@ -27,6 +33,7 @@ function readAnyKey(keys) {
 function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function toYMD(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
+function fmtDayShort(d) { return d.toLocaleDateString(undefined, { weekday: "short" }); }
 function safeDueDate(t) {
   if (!t?.due || t?.due === "No due date") return null;
   const dt = new Date(t.due + "T00:00:00");
@@ -37,18 +44,34 @@ function isOverdue(t, todayStart) {
   const due = safeDueDate(t);
   return due ? startOfDay(due) < todayStart : false;
 }
-function fmtDayShort(d) { return d.toLocaleDateString(undefined, { weekday: "short" }); }
 
-export default function Dashboard() {
-  const nav = useNavigate();
+export default function ProductivityDashboard() {
   const [tasks, setTasks] = useState([]);
   const [habits, setHabits] = useState([]);
 
-  useEffect(() => { setTasks(readAnyKey(TASK_KEYS)); setHabits(readAnyKey(HABIT_KEYS)); }, []);
+  const loadData = () => {
+    setTasks(readAnyKey(TASK_KEYS));
+    setHabits(readAnyKey(HABIT_KEYS));
+  };
+
+  useEffect(() => { loadData(); }, []);
   useEffect(() => {
-    const onFocus = () => { setTasks(readAnyKey(TASK_KEYS)); setHabits(readAnyKey(HABIT_KEYS)); };
+    const onFocus = () => { loadData(); };
+    const onStorage = (e) => {
+      if (e.key === "productivity_tasks_v1" || e.key === "productivity_tasks" || 
+          e.key === "productivity_habits_v1" || e.key === "productivity_habits") {
+        loadData();
+      }
+    };
+    const onDataChange = () => { loadData(); };
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("productivity-data-change", onDataChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("productivity-data-change", onDataChange);
+    };
   }, []);
 
   const now = new Date();
@@ -120,195 +143,263 @@ export default function Dashboard() {
 
   const insightLine = useMemo(() => {
     if (totalTasks === 0 && habitsTotal === 0) return "Start by adding a task or a habit to get going.";
-    if (overdueCount > 0) return `You have ${overdueCount} overdue task(s). Clear those first for a quick win.`;
+    if (overdueCount > 0) return `You have ${overdueCount} overdue task${overdueCount > 1 ? "s" : ""}. Clear those first for a quick win.`;
     if (completionRate >= 70) return "Strong progress — keep the momentum going today.";
     return "Stay focused. Small steps daily compound fast.";
   }, [totalTasks, habitsTotal, overdueCount, completionRate]);
 
   const tooltipStyle = {
-    background: "var(--tooltip-bg)",
-    border: "1px solid var(--tooltip-border)",
-    borderRadius: 12,
-    color: "var(--tooltip-text)",
-    backdropFilter: "blur(8px)",
-    fontSize: 13,
+    background: "rgba(15, 23, 42, 0.95)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+    color: "#f8fafc",
+    fontSize: "13px",
   };
 
   return (
-    <div className="space-y-6">
-      {/* ── Hero Section ── */}
-      <div
-        className="rounded-2xl p-6 md:p-8"
-        style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      >
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="flex-1">
-            <p className="text-xs tracking-widest uppercase font-medium" style={{ color: "var(--text-faint)" }}>
-              Productivity Overview
-            </p>
-            <h1 className="mt-2 text-2xl md:text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
+    <div className="fade-in" style={{ maxWidth: 1400, margin: "0 auto" }}>
+      {/* Hero Section */}
+      <div style={{ 
+        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 100%)",
+        borderRadius: "var(--radius-2xl)", 
+        padding: "var(--space-8)", 
+        border: "1px solid var(--glass-border)",
+        marginBottom: "var(--space-8)",
+      }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-6)" }}>
+          <div style={{ flex: 1, minWidth: 250 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+              <Zap size={16} style={{ color: COLORS.purple }} />
+              <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, color: "var(--text-muted)" }}>
+                Productivity Overview
+              </span>
+            </div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 0, lineHeight: 1.4 }}>
               {insightLine}
             </h1>
           </div>
 
-          {/* Productivity Score */}
-          <div
-            className="rounded-2xl p-5 min-w-[180px] text-center flex-shrink-0"
-            style={{ background: "var(--canvas)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Zap size={16} style={{ color: "var(--accent-500)" }} />
-              <span className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>Productivity Score</span>
+          <div style={{ 
+            background: "var(--bg-card)", 
+            borderRadius: "var(--radius-xl)", 
+            padding: "var(--space-5)", 
+            border: "1px solid var(--glass-border)",
+            minWidth: 180,
+            textAlign: "center",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+              <Zap size={16} style={{ color: productivityScore >= 70 ? COLORS.completed : productivityScore >= 40 ? COLORS.pending : COLORS.error }} />
+              <span style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--text-secondary)" }}>Your Score</span>
             </div>
-            <div className="text-4xl font-extrabold" style={{ color: "var(--accent-500)" }}>
+            <div style={{ 
+              fontSize: "3rem", 
+              fontWeight: 800, 
+              lineHeight: 1,
+              background: productivityScore >= 70 
+                ? "linear-gradient(135deg, #10b981, #059669)" 
+                : productivityScore >= 40 
+                  ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                  : "linear-gradient(135deg, #ef4444, #dc2626)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>
               {productivityScore}
             </div>
-            <div className="mt-3 h-2 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{ width: `${productivityScore}%`, background: "var(--accent-500)" }}
-              />
+            <div style={{ 
+              height: 6, 
+              background: "var(--bg-tertiary)", 
+              borderRadius: "var(--radius-full)", 
+              marginTop: "var(--space-3)",
+              overflow: "hidden",
+            }}>
+              <div style={{ 
+                height: "100%", 
+                width: `${productivityScore}%`, 
+                background: productivityScore >= 70 
+                  ? "linear-gradient(90deg, #10b981, #059669)" 
+                  : productivityScore >= 40 
+                    ? "linear-gradient(90deg, #f59e0b, #d97706)"
+                    : "linear-gradient(90deg, #ef4444, #dc2626)",
+                borderRadius: "var(--radius-full)",
+                transition: "width 0.5s ease",
+              }} />
             </div>
-            <p className="text-xs mt-2" style={{ color: "var(--text-faint)" }}>Based on tasks, habits & streaks</p>
+            <p style={{ fontSize: "0.75rem", marginTop: "var(--space-2)", color: "var(--text-muted)" }}>Based on tasks, habits & streaks</p>
           </div>
         </div>
       </div>
 
-      {/* ── Navigation Cards (Consistent Styling) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <NavCard
-          icon={ListTodo}
-          title="Tasks"
-          subtitle={`${pendingTasks} pending, ${completedTasks} completed`}
-          onClick={() => nav("/productivity/tasks")}
-        />
-        <NavCard
-          icon={Repeat2}
-          title="Habits"
-          subtitle={`${habitsDoneToday}/${habitsTotal} done today`}
-          onClick={() => nav("/productivity/habits")}
-        />
-        <NavCard
-          icon={BarChart3}
-          title="Analytics"
-          subtitle="View insights and trends"
-          onClick={() => nav("/productivity/analytics")}
-        />
+      {/* Stats Grid */}
+      <div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", 
+        gap: "var(--space-4)", 
+        marginBottom: "var(--space-8)" 
+      }}>
+        <StatCard icon={Target} label="Total Tasks" value={totalTasks} color={COLORS.accent} />
+        <StatCard icon={CheckCircle2} label="Completed" value={completedTasks} color={COLORS.completed} />
+        <StatCard icon={Clock} label="In Progress" value={pendingTasks} color={COLORS.pending} />
+        <StatCard icon={TrendingUp} label="Success Rate" value={`${completionRate}%`} color={COLORS.purple} />
+        <StatCard icon={Flame} label="Best Streak" value={`${bestStreak}d`} color="#f59e0b" />
+        <StatCard icon={Repeat2} label="Today's Habits" value={`${habitsDoneToday}/${habitsTotal}`} color={COLORS.accent} />
       </div>
 
-      {/* ── Key Stats ── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <KPI icon={Target} label="Total Tasks" value={totalTasks} />
-        <KPI icon={TrendingUp} label="Completed" value={completedTasks} color="var(--success)" />
-        <KPI icon={Clock} label="Pending" value={pendingTasks} color="var(--warning)" />
-        <KPI icon={Flame} label="Best Streak" value={`${bestStreak}d`} color="var(--warning)" />
-        <KPI icon={Repeat2} label="Habits Today" value={`${habitsDoneToday}/${habitsTotal}`} />
-      </div>
-
-      {/* ── Weekly Chart ── */}
-      <div
-        className="rounded-2xl p-6"
-        style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      >
-        <div className="font-semibold" style={{ color: "var(--text)" }}>Weekly Activity</div>
-        <div className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Completed vs Pending tasks over the last 7 days
+      {/* Weekly Activity Chart */}
+      <div style={{ 
+        background: "var(--bg-card)", 
+        borderRadius: "var(--radius-2xl)", 
+        padding: "var(--space-6)", 
+        border: "1px solid var(--glass-border)",
+        marginBottom: "var(--space-6)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-5)" }}>
+          <div>
+            <h3 style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "var(--space-1)" }}>Weekly Activity</h3>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Completed vs Pending tasks</p>
+          </div>
+          <div style={{ display: "flex", gap: "var(--space-4)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: COLORS.completed }} />
+              <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>Completed</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: COLORS.pending }} />
+              <span style={{ fontSize: "0.8125rem", color: "var(--text-secondary)" }}>Pending</span>
+            </div>
+          </div>
         </div>
-        <div className="mt-4 h-64 md:h-72">
+        
+        <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyData} barCategoryGap="20%">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-              <XAxis dataKey="day" tick={{ fill: "var(--chart-text)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "var(--chart-text)", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--hover-bg)" }} />
-              <Legend />
-              <Bar dataKey="Completed" fill="var(--success)" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Pending" fill="var(--warning)" radius={[6, 6, 0, 0]} />
+            <BarChart data={weeklyData} barCategoryGap="30%">
+              <CartesianGrid strokeDasharray="4 4" stroke="rgba(148, 163, 184, 0.1)" vertical={false} />
+              <XAxis 
+                dataKey="day" 
+                tick={{ fill: "#94a3b8", fontSize: 11 }} 
+                axisLine={false} 
+                tickLine={false} 
+                dy={10}
+              />
+              <YAxis 
+                tick={{ fill: "#94a3b8", fontSize: 11 }} 
+                axisLine={false} 
+                tickLine={false} 
+                dx={-10}
+              />
+              <Tooltip 
+                contentStyle={tooltipStyle}
+                cursor={{ fill: "rgba(255,255,255,0.05)" }}
+              />
+              <Bar dataKey="Completed" fill={COLORS.completed} radius={[6, 6, 0, 0]} barSize={24} />
+              <Bar dataKey="Pending" fill={COLORS.pending} radius={[6, 6, 0, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* ── Overdue Warning ── */}
+      {/* Overdue Warning */}
       {overdueCount > 0 && (
-        <div
-          className="rounded-xl px-5 py-4 flex items-center gap-3 cursor-pointer transition-all duration-150"
-          style={{ background: "var(--danger-bg)", border: "1px solid rgba(239,68,68,0.2)" }}
-          onClick={() => nav("/productivity/tasks")}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.2)"; }}
-        >
-          <Clock size={18} style={{ color: "var(--danger)" }} />
-          <span className="text-sm font-medium" style={{ color: "var(--danger-text)" }}>
-            {overdueCount} overdue task{overdueCount > 1 ? "s" : ""} need your attention
-          </span>
-          <ArrowRight size={16} className="ml-auto" style={{ color: "var(--danger)" }} />
+        <div style={{ 
+          background: "linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%)",
+          border: "1px solid rgba(239, 68, 68, 0.2)",
+          borderRadius: "var(--radius-xl)", 
+          padding: "var(--space-5)", 
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--space-4)",
+        }}>
+          <div style={{ 
+            width: 44, 
+            height: 44, 
+            borderRadius: "var(--radius-lg)", 
+            background: "rgba(239, 68, 68, 0.15)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <AlertCircle size={22} style={{ color: COLORS.error }} />
+          </div>
+          <div>
+            <p style={{ fontSize: "0.9375rem", fontWeight: 600, color: COLORS.error, marginBottom: "var(--space-1)" }}>
+              {overdueCount} overdue task{overdueCount > 1 ? "s" : ""} need your attention
+            </p>
+            <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+              Complete these to boost your productivity score
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {totalTasks === 0 && habitsTotal === 0 && (
+        <div style={{ 
+          background: "var(--bg-card)", 
+          borderRadius: "var(--radius-2xl)", 
+          padding: "var(--space-12)", 
+          border: "1px solid var(--glass-border)",
+          textAlign: "center",
+        }}>
+          <div style={{ 
+            width: 80, 
+            height: 80, 
+            borderRadius: "50%", 
+            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1))",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto var(--space-5)",
+          }}>
+            <Zap size={36} style={{ color: COLORS.accent }} />
+          </div>
+          <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "var(--space-2)" }}>
+            Ready to boost your productivity?
+          </h3>
+          <p style={{ fontSize: "0.9375rem", color: "var(--text-muted)", maxWidth: 400, margin: "0 auto" }}>
+            Add your first task or habit to start tracking your progress and building streaks
+          </p>
         </div>
       )}
     </div>
   );
 }
 
-/* ── Navigation Card (consistent styling for Tasks/Habits/Analytics) ── */
-function NavCard({ icon: Icon, title, subtitle, onClick }) {
+function StatCard({ icon: Icon, label, value, color }) {
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left rounded-2xl p-5 transition-all duration-200 group"
-      style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-sm)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-md)";
-        e.currentTarget.style.borderColor = "var(--accent-200)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
-        e.currentTarget.style.borderColor = "var(--border)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
+    <div style={{ 
+      background: "var(--bg-card)", 
+      borderRadius: "var(--radius-xl)", 
+      padding: "var(--space-5)", 
+      border: "1px solid var(--glass-border)",
+      transition: "all 0.2s ease",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-2px)";
+      e.currentTarget.style.boxShadow = "0 8px 30px rgba(0,0,0,0.12)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "none";
+    }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
-            style={{ background: "var(--accent-50)", color: "var(--accent-500)" }}
-          >
-            <Icon size={20} />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm" style={{ color: "var(--text)" }}>{title}</h3>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
-          </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.2 }}>{value}</div>
+          <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", marginTop: "var(--space-1)" }}>{label}</div>
         </div>
-        <ArrowRight
-          size={16}
-          className="mt-1 transition-all duration-200 opacity-0 group-hover:opacity-100"
-          style={{ color: "var(--accent-500)" }}
-        />
-      </div>
-    </button>
-  );
-}
-
-/* ── KPI Stat ── */
-function KPI({ icon: Icon, label, value, color }) {
-  return (
-    <div
-      className="rounded-xl p-4 transition-all duration-150"
-      style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={15} style={{ color: color || "var(--text-faint)" }} />
-        <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</span>
-      </div>
-      <div className="text-xl md:text-2xl font-bold" style={{ color: color || "var(--text)" }}>
-        {value}
+        <div style={{ 
+          width: 40, 
+          height: 40, 
+          borderRadius: "var(--radius-lg)", 
+          background: `linear-gradient(135deg, ${color}20, ${color}10)`,
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          color: color,
+        }}>
+          <Icon size={18} />
+        </div>
       </div>
     </div>
   );

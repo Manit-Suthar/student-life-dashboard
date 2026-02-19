@@ -1,27 +1,23 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, useLocation, useNavigate, Link } from "react-router-dom";
-import { BookOpen, BarChart3, ClipboardList, BookMarked, Package, Zap, Moon, Sun, ChevronDown, LayoutDashboard } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Routes, Route, useLocation, useNavigate, Link } from "react-router-dom";
+import { BookOpen, BarChart3, ClipboardList, BookMarked, Package, Zap, Moon, Sun, ChevronDown, LayoutDashboard, ListTodo, Repeat2 } from "lucide-react";
 
 import WelcomePage from "./pages/WelcomePage";
 import Dashboard from "./pages/Dashboard";
 import Assignments from "./pages/Assignments";
 import StudyMaterials from "./pages/StudyMaterials";
 import Inventory from "./pages/Inventory";
-import Productivity from "./pages/Productivity";
+
+import ProductivityDashboard from "./features/productivity/pages/Dashboard";
+import Tasks from "./features/productivity/pages/Tasks";
+import Habits from "./features/productivity/pages/Habits";
+import Analytics from "./features/productivity/pages/Analytics";
 
 import "./styles/assignments.css";
-
-function App() {
-  return (
-    <BrowserRouter>
-      <AppLayout />
-    </BrowserRouter>
-  );
-}
+import "./styles/productivity.css";
 
 function AppLayout() {
   const [darkMode, setDarkMode] = useState(true);
-  const [hoveredSection, setHoveredSection] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -36,29 +32,6 @@ function AppLayout() {
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
-  };
-
-  const handleSectionHover = (sectionPath) => {
-    setHoveredSection(sectionPath);
-  };
-
-  const handleSectionLeave = (sectionPath, e) => {
-    // Prevent disappearing when moving to submenu
-    try {
-      if (e.relatedTarget && e.relatedTarget.closest && typeof e.relatedTarget.closest === 'function') {
-        if (e.relatedTarget.closest('.dropdown-menu')) {
-          return;
-        }
-      }
-    } catch (error) {
-      // Ignore errors related to relatedTarget
-      console.debug('Navigation mouseleave error:', error);
-    }
-    setHoveredSection(null);
-  };
-
-  const handleSubSectionClick = (path) => {
-    navigate(path);
   };
 
   // Navigation structure
@@ -88,7 +61,12 @@ function AppLayout() {
       path: '/productivity',
       label: 'Productivity',
       icon: <Zap size={18} />,
-      subItems: []
+      subItems: [
+        { path: '/productivity', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+        { path: '/productivity/tasks', label: 'Tasks', icon: <ListTodo size={16} /> },
+        { path: '/productivity/habits', label: 'Habits', icon: <Repeat2 size={16} /> },
+        { path: '/productivity/analytics', label: 'Analytics', icon: <BarChart3 size={16} /> }
+      ]
     }
   ];
 
@@ -110,31 +88,24 @@ function AppLayout() {
             const isActive = location.pathname === item.path ||
               (item.subItems && item.subItems.some(sub => sub.path === location.pathname));
             const hasSubItems = item.subItems && item.subItems.length > 0;
-            const isHovered = hoveredSection === item.path;
 
             return (
               <div key={item.path} className="nav-item-container">
                 <Link
                   to={item.path}
                   className={`nav-link ${isActive ? 'active' : ''}`}
-                  onMouseEnter={() => handleSectionHover(item.path)}
-                  onMouseLeave={(e) => handleSectionLeave(item.path, e)}
-                  onClick={() => {
-                    navigate(item.path);
-                    setHoveredSection(null);
-                  }}
                 >
                   <span className="nav-link-icon">{item.icon}</span>
                   <span className="nav-link-text">{item.label}</span>
                   {hasSubItems && (
-                    <span className={`dropdown-arrow ${isHovered ? 'open' : ''}`}>
+                    <span className="dropdown-arrow">
                       <ChevronDown size={14} />
                     </span>
                   )}
                 </Link>
 
-                {/* Dropdown Submenu */}
-                {hasSubItems && isHovered && (
+                {/* Dropdown — always rendered, CSS controls visibility on hover */}
+                {hasSubItems && (
                   <div className="dropdown-menu">
                     {item.subItems.map((subItem) => {
                       const isSubActive = location.pathname === subItem.path;
@@ -143,7 +114,6 @@ function AppLayout() {
                           key={subItem.path}
                           to={subItem.path}
                           className={`dropdown-item ${isSubActive ? 'active' : ''}`}
-                          onClick={() => handleSubSectionClick(subItem.path)}
                         >
                           <span className="dropdown-icon">{subItem.icon}</span>
                           <span className="dropdown-text">{subItem.label}</span>
@@ -177,7 +147,10 @@ function AppLayout() {
             <Route path="/assignments/list" element={<Assignments />} />
             <Route path="/study" element={<StudyMaterials />} />
             <Route path="/inventory" element={<Inventory />} />
-            <Route path="/productivity/*" element={<Productivity />} />
+            <Route path="/productivity" element={<ProductivityDashboard />} />
+            <Route path="/productivity/tasks" element={<Tasks />} />
+            <Route path="/productivity/habits" element={<Habits />} />
+            <Route path="/productivity/analytics" element={<Analytics />} />
           </Routes>
         </div>
       </main>
@@ -185,4 +158,4 @@ function AppLayout() {
   );
 }
 
-export default App;
+export default AppLayout;

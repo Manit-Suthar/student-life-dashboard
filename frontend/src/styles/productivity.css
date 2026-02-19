@@ -1,0 +1,166 @@
+/* ===============================
+   PRODUCTIVITY MODULE STYLES
+   Extends the shared design tokens from index.css
+   and reuses patterns from assignments.css
+ ================================ */
+
+/* ── Productivity Dashboard ── */
+.prod-hero {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6) var(--space-8);
+    margin-bottom: var(--space-6);
+    transition: all var(--transition-normal);
+}
+
+.prod-hero:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.prod-score-box {
+    background: var(--bg-glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    min-width: 180px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.prod-score-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.prod-score-bar-track {
+    margin-top: var(--space-3);
+    height: 8px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-tertiary);
+}
+
+.prod-score-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-lg);
+    background: var(--gradient-primary);
+    transition: width 700ms ease;
+}
+
+/* ── Productivity Stats Grid ── */
+.prod-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
+
+/* ── Task / Habit Item Card ── */
+.prod-item {
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    transition: all var(--transition-normal);
+    position: relative;
+}
+
+.prod-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary);
+}
+
+/* ── Habit Streak bar ── */
+.prod-streak-track {
+    height: 6px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-tertiary);
+    margin-top: var(--space-2);
+}
+
+.prod-streak-fill {
+    height: 100%;
+    border-radius: var(--radius-lg);
+    background: var(--gradient-primary);
+    transition: width 600ms ease-out;
+}
+
+/* ── Habit Done Button ── */
+.prod-done-btn {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--success);
+    background: var(--success-bg);
+    color: var(--success);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.prod-done-btn:hover {
+    background: var(--success);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.prod-done-btn.completed {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+/* ── Analytics Chart Container ── */
+.prod-chart-wrap {
+    height: 280px;
+}
+
+/* ── Overdue Warning ── */
+.prod-overdue-banner {
+    background: var(--error-bg);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    transition: all var(--transition-normal);
+}
+
+.prod-overdue-banner:hover {
+    border-color: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+}
+
+/* ── Analytics Leaderboard ── */
+.prod-leaderboard-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.prod-leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .prod-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .prod-hero {
+        padding: var(--space-4) var(--space-5);
+    }
+}

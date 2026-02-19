@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
-  Plus,
-  Search,
-  CheckCircle2,
-  Circle,
-  Trash2,
-  Pencil,
-  X,
-  MoreHorizontal,
+  Plus, Search, CheckCircle2, Circle, Trash2, Pencil, MoreHorizontal,
 } from "lucide-react";
 
 const STORAGE_KEY = "productivity_tasks_v1";
@@ -23,8 +16,8 @@ const SORTS = [
   { value: "created_desc", label: "Newest" },
   { value: "due_asc", label: "Due date (soonest)" },
   { value: "due_desc", label: "Due date (latest)" },
-  { value: "priority", label: "Priority (High \u2192 Low)" },
-  { value: "title", label: "Title (A \u2192 Z)" },
+  { value: "priority", label: "Priority (High → Low)" },
+  { value: "title", label: "Title (A → Z)" },
 ];
 
 export default function Tasks() {
@@ -34,14 +27,6 @@ export default function Tasks() {
   const [dueFilter, setDueFilter] = useState("All");
   const [sortBy, setSortBy] = useState("created_desc");
   const [tasks, setTasks] = useState([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("productivity_tasks");
-    if (saved) setTasks(JSON.parse(saved));
-  }, []);
-  useEffect(() => {
-    localStorage.setItem("productivity_tasks", JSON.stringify(tasks));
-  }, [tasks]);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -65,6 +50,7 @@ export default function Tasks() {
   useEffect(() => {
     if (tasks.length === 0) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    window.dispatchEvent(new CustomEvent("productivity-data-change", { detail: { type: "tasks" } }));
   }, [tasks]);
 
   const today = new Date();
@@ -90,7 +76,7 @@ export default function Tasks() {
     const q = query.trim().toLowerCase();
     let list = tasks
       .filter((t) => (tab === "pending" ? t.status === "pending" : t.status === "completed"))
-      .filter((t) => !q || t.title.toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q) || (t.priority || "").toLowerCase().includes(q))
+      .filter((t) => !q || t.title.toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q))
       .filter((t) => priorityFilter === "All" ? true : t.priority === priorityFilter)
       .filter((t) => {
         if (dueFilter === "All") return true;
@@ -104,8 +90,8 @@ export default function Tasks() {
     const pr = { High: 0, Medium: 1, Low: 2 };
     list.sort((a, b) => {
       if (sortBy === "created_desc") return (b.createdAt || 0) - (a.createdAt || 0);
-      if (sortBy === "due_asc") return (a.due ? new Date(a.due + "T00:00:00").getTime() : Infinity) - (b.due ? new Date(b.due + "T00:00:00").getTime() : Infinity);
-      if (sortBy === "due_desc") return (b.due ? new Date(b.due + "T00:00:00").getTime() : -Infinity) - (a.due ? new Date(a.due + "T00:00:00").getTime() : -Infinity);
+      if (sortBy === "due_asc") return (a.due ? new Date(a.due).getTime() : Infinity) - (b.due ? new Date(b.due).getTime() : Infinity);
+      if (sortBy === "due_desc") return (b.due ? new Date(b.due).getTime() : -Infinity) - (a.due ? new Date(a.due).getTime() : -Infinity);
       if (sortBy === "priority") return (pr[a.priority] ?? 9) - (pr[b.priority] ?? 9);
       if (sortBy === "title") return a.title.localeCompare(b.title);
       return 0;
@@ -122,135 +108,135 @@ export default function Tasks() {
   const submitAdd = () => {
     if (!formTitle.trim()) return;
     setTasks((prev) => [{ id: Date.now(), title: formTitle.trim(), description: formDesc.trim(), due: formDue || "", status: "pending", priority: formPriority, createdAt: Date.now() }, ...prev]);
-    setIsAddOpen(false);
-    resetForm();
+    setIsAddOpen(false); resetForm();
   };
   const submitEdit = () => {
     if (!editingId || !formTitle.trim()) return;
     setTasks((prev) => prev.map((t) => t.id === editingId ? { ...t, title: formTitle.trim(), description: formDesc.trim(), due: formDue || "", priority: formPriority } : t));
-    setIsEditOpen(false);
-    resetForm();
+    setIsEditOpen(false); resetForm();
+  };
+
+  const priorityClass = (p) => {
+    if (p === "High") return "badge-error";
+    if (p === "Medium") return "badge-warning";
+    return "badge-success";
   };
 
   const statusBadge = (t) => {
-    if (t.status === "completed") return { bg: "var(--success-bg)", color: "var(--success-text)", text: "Completed" };
-    if (isOverdue(t.due)) return { bg: "var(--danger-bg)", color: "var(--danger-text)", text: "Overdue" };
-    return { bg: "var(--warning-bg)", color: "var(--warning-text)", text: "Pending" };
-  };
-
-  const priorityBadge = (p) => {
-    if (p === "High") return { bg: "var(--danger-bg)", color: "var(--danger-text)" };
-    if (p === "Medium") return { bg: "var(--warning-bg)", color: "var(--warning-text)" };
-    return { bg: "var(--hover-bg)", color: "var(--text-muted)" };
+    if (t.status === "completed") return { cls: "badge-success", text: "Completed" };
+    if (isOverdue(t.due)) return { cls: "badge-error", text: "Overdue" };
+    return { cls: "badge-warning", text: "Pending" };
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="fade-in">
+      {/* Header — matches Assignments header pattern */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-6)" }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Tasks</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Manage your tasks and track your progress.</p>
+          <h1 style={{ fontSize: "var(--font-size-3xl)", fontWeight: 600, marginBottom: "var(--space-2)" }}>Tasks</h1>
+          <p style={{ color: "var(--text-secondary)" }}>Manage your tasks and track your progress</p>
         </div>
-        <button
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-white transition-all duration-150"
-          style={{ background: "var(--accent-500)" }}
-          onClick={openAdd}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-700)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-500)")}
-        >
-          <Plus size={18} /> Add Task
+        <button className="btn btn-primary btn-lg" onClick={openAdd}>
+          <Plus size={18} />
+          <span>Add Task</span>
         </button>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 rounded-xl p-1" style={{ background: "var(--card)", border: "1px solid var(--border)" }}>
-          <TabBtn active={tab === "pending"} onClick={() => setTab("pending")}>Pending</TabBtn>
-          <TabBtn active={tab === "completed"} onClick={() => setTab("completed")}>Completed</TabBtn>
-        </div>
-        <div className="relative w-full sm:w-72">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
-          <input
-            value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search tasks..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none"
-            style={{ background: "var(--card)", border: "1px solid var(--border)", color: "var(--text)" }}
-          />
-        </div>
+      {/* Filter Tabs — reusing .filter-tabs from assignments.css */}
+      <div className="filter-tabs">
+        <button className={`filter-tab ${tab === "pending" ? "active" : ""}`} onClick={() => setTab("pending")}>
+          Pending ({tasks.filter((t) => t.status === "pending").length})
+        </button>
+        <button className={`filter-tab ${tab === "completed" ? "active" : ""}`} onClick={() => setTab("completed")}>
+          Completed ({tasks.filter((t) => t.status === "completed").length})
+        </button>
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <FilterCard label="Priority">
-          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={selS()}>
-            <option>All</option>{PRIORITIES.map((p) => <option key={p}>{p}</option>)}
-          </select>
-        </FilterCard>
-        <FilterCard label="Due">
-          <select value={dueFilter} onChange={(e) => setDueFilter(e.target.value)} style={selS()}>
-            <option value="All">All</option><option value="Today">Due Today</option><option value="ThisWeek">This Week</option><option value="Overdue">Overdue</option><option value="NoDue">No Due Date</option>
-          </select>
-        </FilterCard>
-        <FilterCard label="Sort">
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={selS()}>
-            {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-        </FilterCard>
+      {/* Search + Filters */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "var(--space-3)", marginBottom: "var(--space-6)" }}>
+        <div style={{ position: "relative" }}>
+          <Search size={16} style={{ position: "absolute", left: "var(--space-3)", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+          <input
+            value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search tasks..."
+            className="form-input" style={{ paddingLeft: "var(--space-10)" }}
+          />
+        </div>
+        <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="form-select">
+          <option value="All">All Priorities</option>
+          {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
+        </select>
+        <select value={dueFilter} onChange={(e) => setDueFilter(e.target.value)} className="form-select">
+          <option value="All">All Dates</option>
+          <option value="Today">Due Today</option>
+          <option value="ThisWeek">This Week</option>
+          <option value="Overdue">Overdue</option>
+          <option value="NoDue">No Due Date</option>
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="form-select">
+          {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
       </div>
 
       {/* Task List */}
-      <div className="space-y-2">
+      <div style={{ display: "grid", gap: "var(--space-3)" }}>
         {filtered.map((t) => {
           const sb = statusBadge(t);
-          const pb = priorityBadge(t.priority);
           return (
-            <div
-              key={t.id}
-              className="rounded-2xl p-4 md:p-5 transition-all duration-150 group"
-              style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-md)")}
-              onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-sm)")}
-            >
-              <div className="flex items-start gap-3">
+            <div key={t.id} className="prod-item">
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-3)" }}>
                 {/* Toggle */}
-                <button className="mt-0.5 flex-shrink-0" onClick={() => toggleStatus(t.id)} title="Toggle complete">
+                <button style={{ background: "none", border: "none", padding: 0, cursor: "pointer", marginTop: 2 }} onClick={() => toggleStatus(t.id)} title="Toggle complete">
                   {t.status === "completed"
                     ? <CheckCircle2 size={20} style={{ color: "var(--success)" }} />
-                    : <Circle size={20} style={{ color: "var(--text-faint)" }} />}
+                    : <Circle size={20} style={{ color: "var(--text-muted)" }} />}
                 </button>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-medium text-sm" style={{ color: "var(--text)" }}>{t.title}</h3>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: pb.bg, color: pb.color }}>{t.priority}</span>
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: sb.bg, color: sb.color }}>{sb.text}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text-primary)" }}>{t.title}</span>
+                    <span className={`badge ${priorityClass(t.priority)}`}>{t.priority}</span>
+                    <span className={`badge ${sb.cls}`}>{sb.text}</span>
                   </div>
-                  {t.description && <p className="text-sm mt-1 line-clamp-1" style={{ color: "var(--text-muted)" }}>{t.description}</p>}
-                  <p className="text-xs mt-2" style={{ color: "var(--text-faint)" }}>Due: {t.due || "No due date"}</p>
+                  {t.description && <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginTop: "var(--space-1)" }}>{t.description}</p>}
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>Due: {t.due || "No due date"}</p>
                 </div>
 
-                {/* Triple-dot menu */}
+                {/* Triple-dot menu — reusing overflow-menu from assignments.css */}
                 <ActionMenu onEdit={() => openEdit(t)} onDelete={() => deleteTask(t.id)} />
               </div>
             </div>
           );
         })}
         {filtered.length === 0 && (
-          <div className="text-sm text-center rounded-2xl p-8" style={{ color: "var(--text-muted)", background: "var(--card)", border: "1px dashed var(--border-strong)" }}>
-            No tasks found.
+          <div className="empty-state glass">
+            <div className="empty-state-icon"><Search size={48} /></div>
+            <h3 className="empty-state-title">No tasks found</h3>
+            <p className="empty-state-description">
+              {tab === "pending" ? "You're all caught up! Add a new task to get started." : "No completed tasks yet."}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Modals */}
-      {isAddOpen && <TaskModal title="Add Task" onClose={() => { setIsAddOpen(false); resetForm(); }} onSubmit={submitAdd} submitLabel="Create" formTitle={formTitle} setFormTitle={setFormTitle} formDesc={formDesc} setFormDesc={setFormDesc} formPriority={formPriority} setFormPriority={setFormPriority} formDue={formDue} setFormDue={setFormDue} />}
-      {isEditOpen && <TaskModal title="Edit Task" onClose={() => { setIsEditOpen(false); resetForm(); }} onSubmit={submitEdit} submitLabel="Save" formTitle={formTitle} setFormTitle={setFormTitle} formDesc={formDesc} setFormDesc={setFormDesc} formPriority={formPriority} setFormPriority={setFormPriority} formDue={formDue} setFormDue={setFormDue} />}
+      {/* Modals — reusing modal-overlay/modal-container from assignments.css */}
+      {isAddOpen && (
+        <TaskModal title="Add Task" onClose={() => { setIsAddOpen(false); resetForm(); }} onSubmit={submitAdd} submitLabel="Create"
+          formTitle={formTitle} setFormTitle={setFormTitle} formDesc={formDesc} setFormDesc={setFormDesc}
+          formPriority={formPriority} setFormPriority={setFormPriority} formDue={formDue} setFormDue={setFormDue}
+        />
+      )}
+      {isEditOpen && (
+        <TaskModal title="Edit Task" onClose={() => { setIsEditOpen(false); resetForm(); }} onSubmit={submitEdit} submitLabel="Save"
+          formTitle={formTitle} setFormTitle={setFormTitle} formDesc={formDesc} setFormDesc={setFormDesc}
+          formPriority={formPriority} setFormPriority={setFormPriority} formDue={formDue} setFormDue={setFormDue}
+        />
+      )}
     </div>
   );
 }
 
-/* ── Triple-dot action menu ── */
+/* ── Overflow menu (reuses assignments.css classes) ── */
 function ActionMenu({ onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -262,37 +248,16 @@ function ActionMenu({ onEdit, onDelete }) {
   }, []);
 
   return (
-    <div className="relative flex-shrink-0" ref={ref}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="p-1.5 rounded-lg transition-all duration-150 opacity-60 group-hover:opacity-100"
-        style={{ color: "var(--text-muted)" }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-      >
+    <div className="overflow-menu-wrapper" ref={ref}>
+      <button className="overflow-menu-trigger" onClick={() => setOpen(!open)}>
         <MoreHorizontal size={18} />
       </button>
       {open && (
-        <div
-          className="absolute right-0 top-8 z-20 w-36 rounded-xl py-1 animate-scale-in"
-          style={{ background: "var(--modal)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}
-        >
-          <button
-            onClick={() => { onEdit(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-all duration-100"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
+        <div className="overflow-menu">
+          <button className="overflow-menu-item" onClick={() => { onEdit(); setOpen(false); }}>
             <Pencil size={14} /> Edit
           </button>
-          <button
-            onClick={() => { onDelete(); setOpen(false); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-all duration-100"
-            style={{ color: "var(--danger)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--danger-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
+          <button className="overflow-menu-item danger" onClick={() => { onDelete(); setOpen(false); }}>
             <Trash2 size={14} /> Delete
           </button>
         </div>
@@ -301,93 +266,40 @@ function ActionMenu({ onEdit, onDelete }) {
   );
 }
 
-/* ── Sub-components ── */
-function TabBtn({ active, children, onClick }) {
-  return (
-    <button onClick={onClick} className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150"
-      style={active ? { background: "var(--accent-500)", color: "#FFF" } : { color: "var(--text-muted)" }}
-      onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--hover-bg)"; }}
-      onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
-    >{children}</button>
-  );
-}
-
-function FilterCard({ label, children }) {
-  return (
-    <div className="rounded-xl p-3 transition-all duration-150" style={{ background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; }}
-    >
-      <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function selS() {
-  return { marginTop: 6, width: "100%", padding: "7px 10px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--border)", color: "var(--text)", outline: "none", fontSize: 13 };
-}
-
+/* ── Modal (reuses assignments.css modal classes) ── */
 function TaskModal({ title, onClose, onSubmit, submitLabel, formTitle, setFormTitle, formDesc, setFormDesc, formPriority, setFormPriority, formDue, setFormDue }) {
-  const [showAdvanced, setShowAdvanced] = useState(Boolean(formDesc || formDue));
-  const inp = { marginTop: 4, width: "100%", padding: "9px 12px", borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--border)", color: "var(--text)", outline: "none", fontSize: 14 };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: "var(--overlay)", backdropFilter: "blur(4px)" }}>
-      <div className="w-full max-w-lg rounded-2xl animate-scale-in" style={{ background: "var(--modal)", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}>
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
-          <h2 className="text-base font-semibold" style={{ color: "var(--text)" }}>{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: "var(--text-muted)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          ><X size={18} /></button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">{title}</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
         </div>
-
-        {/* Body */}
-        <div className="px-5 py-4 space-y-4">
-          <div>
-            <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Title</label>
-            <input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Complete assignment" style={inp} autoFocus />
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label">Title *</label>
+            <input className="form-input" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Complete assignment" autoFocus />
           </div>
-          <div>
-            <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Priority</label>
-            <select value={formPriority} onChange={(e) => setFormPriority(e.target.value)} style={inp}>
-              {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
-            </select>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <select className="form-select" value={formPriority} onChange={(e) => setFormPriority(e.target.value)}>
+                {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Due Date</label>
+              <input type="date" className="form-input" value={formDue} onChange={(e) => setFormDue(e.target.value)} />
+            </div>
           </div>
-
-          {/* Expandable advanced fields */}
-          {!showAdvanced ? (
-            <button onClick={() => setShowAdvanced(true)} className="text-xs font-medium transition-all duration-150" style={{ color: "var(--accent-500)" }}>
-              + Add description & due date
-            </button>
-          ) : (
-            <>
-              <div>
-                <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Description</label>
-                <input value={formDesc} onChange={(e) => setFormDesc(e.target.value)} placeholder="Short description (optional)" style={inp} />
-              </div>
-              <div>
-                <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Due Date</label>
-                <input type="date" value={formDue} onChange={(e) => setFormDue(e.target.value)} style={inp} />
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-4 flex justify-end gap-2" style={{ borderTop: "1px solid var(--border)" }}>
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-150"
-            style={{ border: "1px solid var(--border)", color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >Cancel</button>
-          <button onClick={onSubmit} className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all duration-150"
-            style={{ background: "var(--accent-500)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--accent-700)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-500)")}
-          >{submitLabel}</button>
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea className="form-input form-textarea" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} placeholder="Add a description (optional)" rows={3} />
+          </div>
+          <div className="form-actions">
+            <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+            <button className="btn btn-primary" onClick={onSubmit}>{submitLabel}</button>
+          </div>
         </div>
       </div>
     </div>
