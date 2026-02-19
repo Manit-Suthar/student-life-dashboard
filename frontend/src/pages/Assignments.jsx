@@ -3,11 +3,12 @@ import AssignmentList from "../components/assignments/AssignmentList";
 import AssignmentForm from "../components/assignments/AssignmentForm";
 import { getAssignments, deleteAssignment, updateAssignmentStatus } from "../services/assignmentsApi";
 import { useLocation } from "react-router-dom";
+import { ClipboardList, Search, Plus } from "lucide-react";
 
 function Assignments() {
   const location = useLocation();
   const isListView = location.pathname === "/assignments/list";
-  
+
   const [assignments, setAssignments] = useState([]);
   const [filteredAssignments, setFilteredAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +101,7 @@ function Assignments() {
   const handleStatusChange = async (id, status) => {
     try {
       await updateAssignmentStatus(id, status);
-      setAssignments(assignments.map(a => 
+      setAssignments(assignments.map(a =>
         a.id === id ? { ...a, status } : a
       ));
     } catch (error) {
@@ -144,17 +145,17 @@ function Assignments() {
   return (
     <div className="fade-in">
       {/* Header */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: "var(--spacing-6)"
+        marginBottom: "var(--space-6)"
       }}>
         <div>
-          <h1 style={{ 
-            fontSize: "var(--font-size-3xl)", 
+          <h1 style={{
+            fontSize: "var(--font-size-3xl)",
             fontWeight: "600",
-            marginBottom: "var(--spacing-2)"
+            marginBottom: "var(--space-2)"
           }}>
             Assignments
           </h1>
@@ -162,36 +163,36 @@ function Assignments() {
             Manage and track all your assignments in one place
           </p>
         </div>
-        <button 
+        <button
           className="btn btn-primary btn-lg"
           onClick={handleAddAssignment}
         >
-          <span>+</span>
+          <Plus size={18} />
           <span>Add Assignment</span>
         </button>
       </div>
 
       {/* Filter Tabs */}
       <div className="filter-tabs">
-        <button 
+        <button
           className={`filter-tab ${activeFilter === "all" ? "active" : ""}`}
           onClick={() => handleFilterChange("all")}
         >
           All ({counts.all})
         </button>
-        <button 
+        <button
           className={`filter-tab ${activeFilter === "pending" ? "active" : ""}`}
           onClick={() => handleFilterChange("pending")}
         >
           Pending ({counts.pending})
         </button>
-        <button 
+        <button
           className={`filter-tab ${activeFilter === "submitted" ? "active" : ""}`}
           onClick={() => handleFilterChange("submitted")}
         >
           Submitted ({counts.submitted})
         </button>
-        <button 
+        <button
           className={`filter-tab ${activeFilter === "overdue" ? "active" : ""}`}
           onClick={() => handleFilterChange("overdue")}
         >
@@ -199,46 +200,6 @@ function Assignments() {
         </button>
       </div>
 
-      {/* Quick Stats */}
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: "var(--spacing-4)",
-        marginBottom: "var(--spacing-6)"
-      }}>
-        <div className="glass" style={{ padding: "var(--spacing-4)", textAlign: "center" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: "700", color: "var(--accent-primary)" }}>
-            {counts.all}
-          </div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
-            Total Assignments
-          </div>
-        </div>
-        <div className="glass" style={{ padding: "var(--spacing-4)", textAlign: "center" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: "700", color: "var(--warning)" }}>
-            {counts.pending}
-          </div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
-            Pending
-          </div>
-        </div>
-        <div className="glass" style={{ padding: "var(--spacing-4)", textAlign: "center" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: "700", color: "var(--success)" }}>
-            {counts.submitted}
-          </div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
-            Completed
-          </div>
-        </div>
-        <div className="glass" style={{ padding: "var(--spacing-4)", textAlign: "center" }}>
-          <div style={{ fontSize: "var(--font-size-2xl)", fontWeight: "700", color: "var(--error)" }}>
-            {counts.overdue}
-          </div>
-          <div style={{ fontSize: "var(--font-size-sm)", color: "var(--text-secondary)" }}>
-            Overdue
-          </div>
-        </div>
-      </div>
 
       {/* Assignments List */}
       <div className="assignments-container">
@@ -250,46 +211,33 @@ function Assignments() {
             onStatusChange={handleStatusChange}
           />
         ) : (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "var(--spacing-12)",
-            background: "var(--bg-glass)",
-            border: "1px solid var(--glass-border)",
-            borderRadius: "var(--radius-xl)"
-          }}>
-            <div style={{ fontSize: "3rem", marginBottom: "var(--spacing-4)" }}>
-              {activeFilter === "all" ? "📝" : "🔍"}
+          <div className="empty-state glass">
+            <div className="empty-state-icon">
+              {activeFilter === "all" ? <ClipboardList size={48} /> : <Search size={48} />}
             </div>
-            <h3 style={{ 
-              fontSize: "var(--font-size-xl)", 
-              marginBottom: "var(--spacing-2)",
-              color: "var(--text-primary)"
-            }}>
-              {activeFilter === "all" 
-                ? "No assignments yet" 
+            <h3 className="empty-state-title">
+              {activeFilter === "all"
+                ? "No assignments yet"
                 : `No ${activeFilter} assignments`
               }
             </h3>
-            <p style={{ 
-              color: "var(--text-secondary)",
-              marginBottom: "var(--spacing-6)"
-            }}>
-              {activeFilter === "all" 
+            <p className="empty-state-description">
+              {activeFilter === "all"
                 ? "Start by adding your first assignment to stay organized"
                 : `Great news! You have no ${activeFilter} assignments`
               }
             </p>
             {activeFilter === "all" && (
-              <button 
+              <button
                 className="btn btn-primary"
                 onClick={handleAddAssignment}
               >
-                <span>+</span>
+                <Plus size={16} />
                 <span>Add Your First Assignment</span>
               </button>
             )}
             {activeFilter !== "all" && (
-              <button 
+              <button
                 className="btn btn-secondary"
                 onClick={() => handleFilterChange("all")}
               >
@@ -303,7 +251,7 @@ function Assignments() {
       {/* Assignment Form Modal */}
       {showForm && (
         <div className="modal-overlay" onClick={handleCloseForm}>
-          <div 
+          <div
             className="modal-container"
             onClick={(e) => e.stopPropagation()}
           >

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Link } from "react-router-dom";
+import { BookOpen, BarChart3, ClipboardList, BookMarked, Package, Zap, Moon, Sun, ChevronDown, LayoutDashboard } from "lucide-react";
 
 import WelcomePage from "./pages/WelcomePage";
 import Dashboard from "./pages/Dashboard";
@@ -65,28 +66,28 @@ function AppLayout() {
     {
       path: '/assignments',
       label: 'Assignments',
-      icon: '📚',
+      icon: <BookOpen size={18} />,
       subItems: [
-        { path: '/assignments', label: 'Dashboard', icon: '📊' },
-        { path: '/assignments/list', label: 'List', icon: '📝' }
+        { path: '/assignments', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+        { path: '/assignments/list', label: 'List', icon: <ClipboardList size={16} /> }
       ]
     },
     {
       path: '/study',
       label: 'Study Materials',
-      icon: '📖',
+      icon: <BookMarked size={18} />,
       subItems: []
     },
     {
       path: '/inventory',
       label: 'Inventory',
-      icon: '📦',
+      icon: <Package size={18} />,
       subItems: []
     },
     {
       path: '/productivity',
       label: 'Productivity',
-      icon: '⚡',
+      icon: <Zap size={18} />,
       subItems: []
     }
   ];
@@ -127,7 +128,7 @@ function AppLayout() {
                   <span className="nav-link-text">{item.label}</span>
                   {hasSubItems && (
                     <span className={`dropdown-arrow ${isHovered ? 'open' : ''}`}>
-                      ▼
+                      <ChevronDown size={14} />
                     </span>
                   )}
                 </Link>
@@ -162,7 +163,7 @@ function AppLayout() {
             onClick={toggleDarkMode}
             title="Toggle theme"
           >
-            {darkMode ? '🌙' : '☀️'}
+            {darkMode ? <Moon size={18} /> : <Sun size={18} />}
           </button>
         </div>
       </header>

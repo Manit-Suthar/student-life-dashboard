@@ -1,8 +1,22 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import References from "./References";
+import { Calendar, ExternalLink, Pencil, Trash2, CheckCircle2, RotateCcw, MoreVertical, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
 
 function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
   const [expandedCards, setExpandedCards] = useState(new Set());
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleCardExpansion = (id) => {
     setExpandedCards(prev => {
@@ -16,15 +30,20 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
     });
   };
 
+  const toggleMenu = (id, e) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === id ? null : id);
+  };
+
   const getStatusBadge = (assignment) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dueDate = new Date(assignment.dueDate);
     dueDate.setHours(0, 0, 0, 0);
-    
+
     let statusClass = "badge-pending";
     let statusText = "Pending";
-    
+
     if (assignment.status === "submitted") {
       statusClass = "badge-submitted";
       statusText = "Submitted";
@@ -32,7 +51,7 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
       statusClass = "badge-overdue";
       statusText = "Overdue";
     }
-    
+
     return { class: statusClass, text: statusText };
   };
 
@@ -54,16 +73,16 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     date.setHours(0, 0, 0, 0);
-    
+
     const diffTime = date - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     const formattedDate = date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
-    
+
     if (diffDays < 0) {
       return `${formattedDate} (${Math.abs(diffDays)} days overdue)`;
     } else if (diffDays === 0) {
@@ -87,7 +106,8 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
         const isExpanded = expandedCards.has(assignment.id);
         const statusBadge = getStatusBadge(assignment);
         const isOverdue = statusBadge.text === "Overdue";
-        
+        const isMenuOpen = openMenuId === assignment.id;
+
         return (
           <div
             key={assignment.id}
@@ -101,14 +121,50 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
                   <div className="assignment-subject">{assignment.subject}</div>
                 )}
               </div>
-              <div className={`priority-dot ${getPriorityClass(assignment.priority)}`} 
-                   title={`Priority: ${assignment.priority}`} />
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                <div className={`priority-dot ${getPriorityClass(assignment.priority)}`}
+                  title={`Priority: ${assignment.priority}`} />
+                {/* Overflow Menu */}
+                <div className="overflow-menu-wrapper" ref={isMenuOpen ? menuRef : null}>
+                  <button
+                    className="overflow-menu-trigger"
+                    onClick={(e) => toggleMenu(assignment.id, e)}
+                    title="More actions"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                  {isMenuOpen && (
+                    <div className="overflow-menu">
+                      <button
+                        className="overflow-menu-item"
+                        onClick={(e) => { e.stopPropagation(); onEdit(assignment); setOpenMenuId(null); }}
+                      >
+                        <Pencil size={14} /> Edit
+                      </button>
+                      {assignment.references && assignment.references.length > 0 && (
+                        <button
+                          className="overflow-menu-item"
+                          onClick={(e) => { e.stopPropagation(); toggleCardExpansion(assignment.id); setOpenMenuId(null); }}
+                        >
+                          <LinkIcon size={14} /> {isExpanded ? "Hide" : "Show"} Links
+                        </button>
+                      )}
+                      <button
+                        className="overflow-menu-item danger"
+                        onClick={(e) => { e.stopPropagation(); onDelete(assignment.id); setOpenMenuId(null); }}
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Card Meta Information */}
             <div className="assignment-meta">
               <div className="assignment-date">
-                📅 {formatDate(assignment.dueDate)}
+                <Calendar size={14} /> {formatDate(assignment.dueDate)}
               </div>
             </div>
 
@@ -125,9 +181,9 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
             {/* References (shown when expanded) */}
             {isExpanded && assignment.references && assignment.references.length > 0 && (
               <div className="assignment-references">
-                <h4 style={{ 
-                  fontSize: "var(--font-size-sm)", 
-                  marginBottom: "var(--spacing-2)",
+                <h4 style={{
+                  fontSize: "0.875rem",
+                  marginBottom: "var(--space-2)",
                   color: "var(--text-secondary)"
                 }}>
                   References
@@ -145,69 +201,35 @@ function AssignmentList({ assignments, onEdit, onDelete, onStatusChange }) {
                         window.open(ref.url, '_blank', 'noopener,noreferrer');
                       }}
                     >
-                      🔗 {ref.label || ref.url}
+                      <ExternalLink size={14} /> {ref.label || ref.url}
                     </a>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Primary Action Button */}
             <div className="assignment-actions">
               {assignment.status === "pending" ? (
                 <button
                   className="btn btn-success btn-sm"
                   onClick={() => onStatusChange(assignment.id, "submitted")}
                 >
-                  ✓ Mark Submitted
+                  <CheckCircle2 size={14} /> Mark Submitted
                 </button>
               ) : (
                 <button
                   className="btn btn-secondary btn-sm"
                   onClick={() => onStatusChange(assignment.id, "pending")}
                 >
-                  ↺ Mark Pending
+                  <RotateCcw size={14} /> Mark Pending
                 </button>
               )}
-              
-              {assignment.references && assignment.references.length > 0 && (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => toggleCardExpansion(assignment.id)}
-                >
-                  {isExpanded ? "▲" : "▼"} {isExpanded ? "Hide" : "Show"} Links
-                </button>
-              )}
-              
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => onEdit(assignment)}
-              >
-                ✏️ Edit
-              </button>
-              
-              <button
-                className="btn btn-error btn-sm"
-                onClick={() => onDelete(assignment.id)}
-              >
-                🗑️ Delete
-              </button>
             </div>
 
             {/* Overdue Indicator */}
             {isOverdue && (
-              <div style={{
-                position: "absolute",
-                top: "-2px",
-                right: "-2px",
-                background: "var(--error)",
-                color: "white",
-                fontSize: "var(--font-size-xs)",
-                fontWeight: "600",
-                padding: "var(--spacing-1) var(--spacing-2)",
-                borderRadius: "0 0 0 var(--radius-lg)",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
-              }}>
+              <div className="overdue-badge">
                 OVERDUE
               </div>
             )}

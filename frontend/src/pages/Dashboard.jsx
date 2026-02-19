@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getAssignments } from "../services/assignmentsApi";
+import { BookOpen, Clock, CheckCircle2, AlertTriangle, PartyPopper, Plus, ClipboardList, BarChart3, ArrowRight } from "lucide-react";
 
 function Dashboard() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAssignments = async () => {
@@ -72,13 +74,19 @@ function Dashboard() {
   const assignmentsBySubject = assignments.reduce((acc, assignment) => {
     const subject = assignment.subject || "General";
     if (!acc[subject]) {
-      acc[subject] = [];
+      acc[subject] = { total: 0, completed: 0 };
     }
-    acc[subject].push(assignment);
+    acc[subject].total += 1;
+    if (assignment.status === "submitted") {
+      acc[subject].completed += 1;
+    }
     return acc;
   }, {});
 
-
+  // Subject colors for the bar chart
+  const subjectColors = [
+    "#6366f1", "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#14b8a6"
+  ];
 
   // Simple pie chart with only 2 colors: Completed vs Remaining
   const completedCount = submittedAssignments;
@@ -112,7 +120,9 @@ function Dashboard() {
               <div className="stat-number">{totalAssignments}</div>
               <div className="stat-label">Total Assignments</div>
             </div>
-            <div className="stat-icon">📚</div>
+            <div className="stat-icon">
+              <BookOpen size={22} />
+            </div>
           </div>
         </div>
 
@@ -122,7 +132,9 @@ function Dashboard() {
               <div className="stat-number">{pendingAssignments}</div>
               <div className="stat-label">Pending</div>
             </div>
-            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}>⏳</div>
+            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}>
+              <Clock size={22} />
+            </div>
           </div>
         </div>
 
@@ -132,7 +144,9 @@ function Dashboard() {
               <div className="stat-number">{submittedAssignments}</div>
               <div className="stat-label">Completed</div>
             </div>
-            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}>✅</div>
+            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}>
+              <CheckCircle2 size={22} />
+            </div>
           </div>
         </div>
 
@@ -142,7 +156,9 @@ function Dashboard() {
               <div className="stat-number">{overdueAssignments}</div>
               <div className="stat-label">Overdue</div>
             </div>
-            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" }}>⚠️</div>
+            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" }}>
+              <AlertTriangle size={22} />
+            </div>
           </div>
         </div>
       </div>
@@ -196,8 +212,8 @@ function Dashboard() {
               {donutSegments.map(segment => (
                 <div key={segment.label} className="legend-item">
                   <div className="legend-label">
-                    <div 
-                      className="legend-color" 
+                    <div
+                      className="legend-color"
                       style={{ background: segment.color }}
                     />
                     {segment.label}
@@ -213,7 +229,7 @@ function Dashboard() {
         <div className="chart-card">
           <div className="section-header">
             <h3 className="chart-title">Upcoming Deadlines</h3>
-            <Link to="/assignments/list" className="view-all-btn">View All →</Link>
+            <Link to="/assignments/list" className="view-all-btn">View All <ArrowRight size={14} style={{ display: "inline", verticalAlign: "middle" }} /></Link>
           </div>
           <div className="deadlines-list">
             {upcomingDeadlines.length > 0 ? (
@@ -221,14 +237,19 @@ function Dashboard() {
                 const daysUntilDue = getDaysUntilDue(assignment.dueDate);
                 const urgencyLevel = getUrgencyLevel(daysUntilDue);
                 const priorityBorderClass = `priority-${urgencyLevel.toLowerCase()}-border`;
-                
+                const subjectIndex = Object.keys(assignmentsBySubject).indexOf(assignment.subject || "General");
+                const subjectColor = subjectColors[subjectIndex >= 0 ? subjectIndex % subjectColors.length : 0];
+
                 return (
                   <div key={assignment.id} className="deadline-item">
                     <div className={`deadline-priority ${priorityBorderClass}`} />
                     <div className="deadline-content">
                       <div className="deadline-title">{assignment.title}</div>
                       <div className="deadline-meta">
-                        <span className="deadline-subject">{assignment.subject}</span>
+                        <span className="deadline-subject" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                          <span className="subject-color-dot" style={{ background: subjectColor, width: 8, height: 8 }} />
+                          {assignment.subject}
+                        </span>
                         <span>•</span>
                         <span>{formatDate(assignment.dueDate)}</span>
                         <span className={`deadline-urgency urgency-${urgencyLevel.toLowerCase()}`}>
@@ -240,12 +261,14 @@ function Dashboard() {
                 );
               })
             ) : (
-              <div style={{ 
-                textAlign: "center", 
+              <div style={{
+                textAlign: "center",
                 padding: "var(--space-6)",
                 color: "var(--text-secondary)"
               }}>
-                <div style={{ fontSize: "2rem", marginBottom: "var(--space-2)", opacity: 0.5 }}>🎉</div>
+                <div style={{ marginBottom: "var(--space-2)", opacity: 0.5 }}>
+                  <PartyPopper size={32} style={{ margin: "0 auto" }} />
+                </div>
                 <div>No upcoming deadlines</div>
                 <div style={{ fontSize: "0.875rem", marginTop: "var(--space-1)" }}>
                   You're all caught up!
@@ -256,29 +279,70 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Subject Breakdown */}
+      {Object.keys(assignmentsBySubject).length > 0 && (
+        <div className="chart-card" style={{ marginBottom: "var(--space-8)" }}>
+          <h3 className="chart-title">Subject Breakdown</h3>
+          <div className="subject-bars">
+            {Object.entries(assignmentsBySubject).map(([subject, data], index) => {
+              const percentage = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
+              const color = subjectColors[index % subjectColors.length];
+              return (
+                <div key={subject} className="subject-bar-item">
+                  <div className="subject-bar-header">
+                    <div className="subject-bar-label">
+                      <span className="subject-color-dot" style={{ background: color }} />
+                      <span>{subject}</span>
+                    </div>
+                    <span className="subject-bar-count">{data.completed}/{data.total}</span>
+                  </div>
+                  <div className="subject-bar-track">
+                    <div
+                      className="subject-bar-fill"
+                      style={{
+                        width: `${percentage}%`,
+                        background: color,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="chart-card">
         <div className="section-header">
-          <h3 className="chart-title" style={{ '::before': { content: '⚡' } }}>Quick Actions</h3>
+          <h3 className="chart-title">Quick Actions</h3>
         </div>
         <div className="quick-actions">
-          <div className="action-card" onClick={() => window.location.href = "/assignments/list"}>
-            <div className="action-icon">➕</div>
+          <div className="action-card" onClick={() => navigate("/assignments/list")}>
+            <div className="action-icon">
+              <Plus size={24} />
+            </div>
             <div className="action-title">Add Assignment</div>
             <div className="action-description">Create a new assignment quickly</div>
           </div>
-          <div className="action-card" onClick={() => window.location.href = "/assignments/list"}>
-            <div className="action-icon">📋</div>
+          <div className="action-card" onClick={() => navigate("/assignments/list")}>
+            <div className="action-icon">
+              <ClipboardList size={24} />
+            </div>
             <div className="action-title">Manage Tasks</div>
             <div className="action-description">View and edit all assignments</div>
           </div>
-          <div className="action-card" onClick={() => window.location.href = "/study"}>
-            <div className="action-icon">📚</div>
+          <div className="action-card" onClick={() => navigate("/study")}>
+            <div className="action-icon">
+              <BookOpen size={24} />
+            </div>
             <div className="action-title">Study Hub</div>
             <div className="action-description">Access your study materials</div>
           </div>
-          <div className="action-card" onClick={() => window.location.href = "/productivity"}>
-            <div className="action-icon">📊</div>
+          <div className="action-card" onClick={() => navigate("/productivity")}>
+            <div className="action-icon">
+              <BarChart3 size={24} />
+            </div>
             <div className="action-title">Analytics</div>
             <div className="action-description">Track your progress and stats</div>
           </div>
