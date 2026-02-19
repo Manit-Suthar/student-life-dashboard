@@ -180,19 +180,19 @@ export default function Dashboard() {
           icon={ListTodo}
           title="Tasks"
           subtitle={`${pendingTasks} pending, ${completedTasks} completed`}
-          onClick={() => nav("/tasks")}
+          onClick={() => nav("/productivity/tasks")}
         />
         <NavCard
           icon={Repeat2}
           title="Habits"
           subtitle={`${habitsDoneToday}/${habitsTotal} done today`}
-          onClick={() => nav("/habits")}
+          onClick={() => nav("/productivity/habits")}
         />
         <NavCard
           icon={BarChart3}
           title="Analytics"
           subtitle="View insights and trends"
-          onClick={() => nav("/analytics")}
+          onClick={() => nav("/productivity/analytics")}
         />
       </div>
 
@@ -234,7 +234,7 @@ export default function Dashboard() {
         <div
           className="rounded-xl px-5 py-4 flex items-center gap-3 cursor-pointer transition-all duration-150"
           style={{ background: "var(--danger-bg)", border: "1px solid rgba(239,68,68,0.2)" }}
-          onClick={() => nav("/tasks")}
+          onClick={() => nav("/productivity/tasks")}
           onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.2)"; }}
         >

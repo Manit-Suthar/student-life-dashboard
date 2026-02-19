@@ -2,11 +2,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Sun, Moon, ArrowLeft } from "lucide-react";
 
+const BASE = "/productivity";
+
 const PAGE_TITLES = {
-  "/": "Dashboard",
-  "/tasks": "Tasks",
-  "/habits": "Habits",
-  "/analytics": "Analytics",
+  [`${BASE}`]: "Dashboard",
+  [`${BASE}/tasks`]: "Tasks",
+  [`${BASE}/habits`]: "Habits",
+  [`${BASE}/analytics`]: "Analytics",
 };
 
 export default function Layout({ children }) {
@@ -14,7 +16,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const pageTitle = PAGE_TITLES[location.pathname] || "Dashboard";
-  const isHome = location.pathname === "/";
+  const isHome = location.pathname === BASE || location.pathname === `${BASE}/`;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--canvas)" }}>
@@ -30,7 +32,7 @@ export default function Layout({ children }) {
           {/* Back button on sub-pages */}
           {!isHome && (
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate(BASE)}
               className="p-2 rounded-xl transition-all duration-150"
               style={{ color: "var(--text-muted)" }}
               onMouseEnter={(e) => {
