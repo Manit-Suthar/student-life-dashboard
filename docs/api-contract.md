@@ -1,17 +1,24 @@
-# API Contract – Student Life Dashboard
-
-## Productivity
-GET    /api/tasks
-POST   /api/tasks
+# API Contract - Student Life Dashboard
 
 ## Inventory
-GET    /api/items
-POST   /api/items
 
-## Study Materials
-GET    /api/materials
-POST   /api/materials
+Required endpoints:
 
-## Assignments
-GET    /api/assignments
-POST   /api/assignments
+```txt
+GET    /api/inventory/items
+POST   /api/inventory/items
+PUT    /api/inventory/items/:id
+GET    /api/inventory/borrowed
+POST   /api/inventory/borrowed
+POST   /api/inventory/borrowed/:id/return
+GET    /api/inventory/stats
+```
+
+Extra endpoints used by Categories UI:
+
+```txt
+GET    /api/inventory/categories
+POST   /api/inventory/categories
+PUT    /api/inventory/categories/:id
+DELETE /api/inventory/categories/:id
+```
