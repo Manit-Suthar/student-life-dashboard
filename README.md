@@ -1,86 +1,183 @@
-# 🎓 Student Life Dashboard
+# Student Life Dashboard
 
-A comprehensive, professional-grade web application designed to help students manage their entire academic and personal life from a single dashboard. Built with a sleek, high-contrast enterprise design system.
+A web-based application that helps students manage academic tasks, study resources, personal inventory, and productivity metrics from a unified dashboard. The platform provides secure user authentication, task management tools, resource organization, and progress tracking features.
 
-## 🌟 Features
+---
 
-*   **Secure Authentication**: Fully functional JWT-based user authentication. Every user gets a private, individualized dashboard.
-*   **Assignments Tracker**: Manage tasks by priority (High, Medium, Low), track deadlines, and attach essential reference links. Automatically flags overdue assignments.
-*   **Study Materials Hub**: A centralized resource library to store and categorize study links and reference materials.
-*   **Inventory Management**: Track your dorm room supplies, textbooks, and electronics, including their condition and location.
-*   **Productivity & Habits (Local)**: Maintain daily streaks, track completion success rates, and view beautiful charts visualizing your productivity trends over time.
-*   **Dark/Light Mode**: Flawless, accessible color contrast that flips beautifully between professional light and slate dark modes.
+## Overview
 
-## 🛠 Tech Stack
+Student Life Dashboard is designed to centralize essential student activities into a single interface. Each user has a private workspace for managing assignments, organizing study materials, tracking inventory, and monitoring productivity habits.
 
-**Frontend:**
-*   React (Vite)
-*   React Router (SPA Navigation)
-*   Recharts (Analytics Visualizations)
-*   Lucide-React (Icons)
-*   Pure CSS (Enterprise-grade UI tokens, Glassmorphism, CSS Variables)
+---
 
-**Backend:**
-*   Node.js & Express
-*   Prisma ORM
-*   SQLite Database
-*   `jsonwebtoken` & `bcryptjs` (Auth & Security)
+## Key Features
 
-## 🚀 Getting Started
+### Authentication & User Management
 
-Follow these steps to run the application locally.
+* JWT-based authentication system
+* Secure user registration and login
+* Individualized dashboards for each user
+* Protected routes and user-specific data access
 
-### 1. Backend Setup
+### Assignment Management
 
-Open a terminal and navigate to the backend folder:
+* Create, update, and delete assignments
+* Organize tasks by priority level
+* Track deadlines and due dates
+* Store related reference links
+* Automatic overdue assignment detection
+
+### Study Materials Repository
+
+* Centralized storage for study resources
+* Categorization of learning materials
+* Quick access to important links and references
+* Organized resource management
+
+### Inventory Tracking
+
+* Maintain records of personal belongings
+* Track textbooks, electronics, and room supplies
+* Monitor item condition and storage location
+* Simple inventory management interface
+
+### Productivity Tracking
+
+* Daily habit and streak monitoring
+* Productivity completion statistics
+* Visual performance analytics
+* Historical trend tracking
+
+### Theme Support
+
+* Light and dark mode support
+* Consistent design system
+* Accessibility-focused color contrast
+* Responsive user interface
+
+---
+
+## Technology Stack
+
+### Frontend
+
+* React
+* Vite
+* React Router
+* Recharts
+* Lucide React
+* CSS Variables and Custom Styling
+
+### Backend
+
+* Node.js
+* Express.js
+* Prisma ORM
+* SQLite
+
+### Authentication & Security
+
+* JSON Web Tokens (JWT)
+* bcryptjs
+
+---
+
+## Installation
+
+### Backend Setup
+
+Navigate to the backend directory:
+
 ```bash
 cd backend
 ```
 
 Install dependencies:
+
 ```bash
 npm install
 ```
 
-Set up your Environment Variables:
-Create a `.env` file in the `backend` folder and add a secure secret:
+Create a `.env` file in the backend directory:
+
 ```env
-JWT_SECRET=your_super_secret_string_here
+JWT_SECRET=your_secure_secret_key
 ```
 
-Initialize the database:
+Generate Prisma client and synchronize the database:
+
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
-Start the server:
+Start the backend server:
+
 ```bash
 node index.js
 ```
-*(The backend will run on `http://localhost:5000`)*
 
-### 2. Frontend Setup
+The backend server will run on:
 
-Open a **new** terminal window and navigate to the frontend folder:
+```text
+http://localhost:5000
+```
+
+---
+
+### Frontend Setup
+
+Open a new terminal and navigate to the frontend directory:
+
 ```bash
 cd frontend
 ```
 
 Install dependencies:
+
 ```bash
 npm install
 ```
 
-Start the Vite development server:
+Start the development server:
+
 ```bash
 npm run dev
 ```
 
-Open your browser and navigate to the URL provided by Vite (usually `http://localhost:5173`). Create an account and start managing your student life!
+The application will be available at the URL provided by Vite, typically:
 
-## 📸 Screenshots
-*(Add screenshots of your application here!)*
+```text
+http://localhost:5173
+```
 
-## 📝 License
-This project is open-source and available under the [MIT License](LICENSE).
+---
+
+## Project Structure
+
+```text
+student-life-dashboard/
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+│
+├── backend/
+│   ├── prisma/
+│   ├── routes/
+│   ├── middleware/
+│   ├── index.js
+│   └── package.json
+│
+└── README.md
+```
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for additional details.
+
+---
+
+
