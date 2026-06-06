@@ -3,13 +3,7 @@ import {
   Plus, Search, CheckCircle2, Circle, Trash2, Pencil, MoreHorizontal,
 } from "lucide-react";
 
-const STORAGE_KEY = "productivity_tasks_v1";
-
-const defaultTasks = [
-  { id: 1, title: "Complete project proposal", description: "Write and submit proposal for final year project.", due: "2023-05-15", status: "pending", priority: "High", createdAt: Date.now() - 100000 },
-  { id: 2, title: "Study for math exam", description: "Review chapters 5-7 and solve practice questions.", due: "2023-05-18", status: "pending", priority: "Medium", createdAt: Date.now() - 90000 },
-  { id: 3, title: "Read research paper", description: "Summarize key points and note questions.", due: "", status: "completed", priority: "Low", createdAt: Date.now() - 80000 },
-];
+import { fetchTasks, addTask as apiAddTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask } from "../services/tasksApi";
 
 const PRIORITIES = ["High", "Medium", "Low"];
 const SORTS = [
@@ -37,20 +31,22 @@ export default function Tasks() {
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setTasks(parsed);
-        else setTasks(defaultTasks);
-      } else setTasks(defaultTasks);
-    } catch { setTasks(defaultTasks); }
+    const loadTasks = async () => {
+      try {
+        const data = await fetchTasks();
+        setTasks(data);
+      } catch (err) {
+        console.error("Failed to fetch tasks", err);
+      }
+    };
+    loadTasks();
   }, []);
 
+  // Sync data to other tabs/windows if needed, but not to localStorage anymore
   useEffect(() => {
-    if (tasks.length === 0) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    window.dispatchEvent(new CustomEvent("productivity-data-change", { detail: { type: "tasks" } }));
+    if (tasks.length > 0) {
+      window.dispatchEvent(new CustomEvent("productivity-data-change", { detail: { type: "tasks" } }));
+    }
   }, [tasks]);
 
   const today = new Date();
@@ -99,21 +95,64 @@ export default function Tasks() {
     return list;
   }, [tasks, tab, query, priorityFilter, dueFilter, sortBy]);
 
-  const toggleStatus = (id) => setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: t.status === "pending" ? "completed" : "pending" } : t));
-  const deleteTask = (id) => { setTasks((prev) => prev.filter((t) => t.id !== id)); if (editingId === id) setEditingId(null); };
+  const toggleStatus = async (id) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const newStatus = task.status === "pending" ? "completed" : "pending";
+    // Optimistic update
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)));
+    try {
+      await apiUpdateTask(id, { status: newStatus });
+    } catch (e) {
+      // Revert on error
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: task.status } : t)));
+    }
+  };
+
+  const deleteHandler = async (id) => {
+    const prevTasks = [...tasks];
+    // Optimistic delete for snappy UI
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    if (editingId === id) setEditingId(null);
+    try {
+      await apiDeleteTask(id);
+    } catch (e) {
+      setTasks(prevTasks);
+      alert("Failed to delete task.");
+    }
+  };
+
   const resetForm = () => { setFormTitle(""); setFormDesc(""); setFormPriority("Medium"); setFormDue(""); setEditingId(null); };
   const openAdd = () => { resetForm(); setIsAddOpen(true); };
   const openEdit = (task) => { setEditingId(task.id); setFormTitle(task.title || ""); setFormDesc(task.description || ""); setFormPriority(task.priority || "Medium"); setFormDue(task.due || ""); setIsEditOpen(true); };
 
-  const submitAdd = () => {
+  const submitAdd = async () => {
     if (!formTitle.trim()) return;
-    setTasks((prev) => [{ id: Date.now(), title: formTitle.trim(), description: formDesc.trim(), due: formDue || "", status: "pending", priority: formPriority, createdAt: Date.now() }, ...prev]);
+    const newTask = { title: formTitle.trim(), description: formDesc.trim(), due: formDue || null, priority: formPriority };
     setIsAddOpen(false); resetForm();
+    try {
+      const addedTask = await apiAddTask(newTask);
+      setTasks((prev) => [addedTask, ...prev]);
+    } catch (e) {
+      alert("Failed to add task.");
+    }
   };
-  const submitEdit = () => {
+
+  const submitEdit = async () => {
     if (!editingId || !formTitle.trim()) return;
-    setTasks((prev) => prev.map((t) => t.id === editingId ? { ...t, title: formTitle.trim(), description: formDesc.trim(), due: formDue || "", priority: formPriority } : t));
+    const updatedFields = { title: formTitle.trim(), description: formDesc.trim(), due: formDue || null, priority: formPriority };
+    const prevTasks = [...tasks];
+    
+    // Optimistic update
+    setTasks((prev) => prev.map((t) => t.id === editingId ? { ...t, ...updatedFields } : t));
     setIsEditOpen(false); resetForm();
+    
+    try {
+      await apiUpdateTask(editingId, updatedFields);
+    } catch (e) {
+      setTasks(prevTasks);
+      alert("Failed to update task.");
+    }
   };
 
   const priorityClass = (p) => {
@@ -203,7 +242,7 @@ export default function Tasks() {
                 </div>
 
                 {/* Triple-dot menu — reusing overflow-menu from assignments.css */}
-                <ActionMenu onEdit={() => openEdit(t)} onDelete={() => deleteTask(t.id)} />
+                <ActionMenu onEdit={() => openEdit(t)} onDelete={() => deleteHandler(t.id)} />
               </div>
             </div>
           );

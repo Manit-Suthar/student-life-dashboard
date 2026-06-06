@@ -14,18 +14,8 @@ import {
   Area,
 } from "recharts";
 import { Target, CheckCircle2, Clock, TrendingUp, Flame, AlertTriangle, Calendar } from "lucide-react";
-
-const TASK_KEYS = ["productivity_tasks_v1", "productivity_tasks", "tasks"];
-const HABIT_KEYS = ["productivity_habits_v1", "productivity_habits", "habits"];
-
-function readAny(keys) {
-  for (const k of keys) {
-    const r = localStorage.getItem(k);
-    if (!r) continue;
-    try { const p = JSON.parse(r); if (Array.isArray(p)) return p; } catch { /* skip */ }
-  }
-  return [];
-}
+import { fetchTasks } from "../services/tasksApi";
+import { fetchHabits } from "../services/habitsApi";
 
 function sod(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function addD(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -85,29 +75,27 @@ export default function Analytics() {
   const [tasks, setTasks] = useState([]);
   const [habits, setHabits] = useState([]);
 
-  const loadData = () => {
-    setTasks(readAny(TASK_KEYS));
-    setHabits(readAny(HABIT_KEYS));
-  };
-
-  useEffect(() => { loadData(); }, []);
   useEffect(() => {
-    const onFocus = () => { loadData(); };
-    const onStorage = (e) => {
-      if (e.key === "productivity_tasks_v1" || e.key === "productivity_tasks" || 
-          e.key === "productivity_habits_v1" || e.key === "productivity_habits") {
-        loadData();
+    const loadData = async () => {
+      try {
+        const [tasksData, habitsData] = await Promise.all([
+          fetchTasks(),
+          fetchHabits()
+        ]);
+        setTasks(tasksData || []);
+        setHabits(habitsData || []);
+      } catch (e) {
+        console.error("Failed to load analytics data", e);
       }
     };
-    const onDataChange = () => { loadData(); };
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("productivity-data-change", onDataChange);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("productivity-data-change", onDataChange);
+    
+    loadData();
+
+    const handleUpdate = () => {
+      loadData();
     };
+    window.addEventListener("productivity-data-change", handleUpdate);
+    return () => window.removeEventListener("productivity-data-change", handleUpdate);
   }, []);
 
   const now = new Date();

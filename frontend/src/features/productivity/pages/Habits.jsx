@@ -3,13 +3,7 @@ import {
   Plus, CheckCircle2, Circle, Trash2, Pencil, X, Undo2, Flame, MoreHorizontal,
 } from "lucide-react";
 
-const STORAGE_KEY = "productivity_habits_v1";
-
-const defaultHabits = [
-  { id: 1, name: "Study", goalType: "daily", weeklyTarget: 5, notes: "At least 45 minutes", completions: [], createdAt: Date.now() - 100000 },
-  { id: 2, name: "Workout", goalType: "weekly", weeklyTarget: 4, notes: "Any cardio/strength", completions: [], createdAt: Date.now() - 90000 },
-  { id: 3, name: "Read", goalType: "daily", weeklyTarget: 5, notes: "10 pages", completions: [], createdAt: Date.now() - 80000 },
-];
+import { fetchHabits, addHabit as apiAddHabit, updateHabit as apiUpdateHabit, deleteHabit as apiDeleteHabit } from "../services/habitsApi";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -72,15 +66,19 @@ export default function Habits() {
   const ws = weekStart(new Date());
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) { const p = JSON.parse(raw); setHabits(Array.isArray(p) ? p : defaultHabits); }
-      else setHabits(defaultHabits);
-    } catch { setHabits(defaultHabits); }
+    const loadHabits = async () => {
+      try {
+        const data = await fetchHabits();
+        setHabits(data);
+      } catch (err) {
+        console.error("Failed to fetch habits", err);
+      }
+    };
+    loadHabits();
   }, []);
+  
   useEffect(() => { 
     if (habits.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
       window.dispatchEvent(new CustomEvent("productivity-data-change", { detail: { type: "habits" } }));
     }
   }, [habits]);
@@ -121,28 +119,77 @@ export default function Habits() {
   const openAdd = () => { resetForm(); setIsAddOpen(true); };
   const openEdit = (h) => { setEditingId(h.id); setFormName(h.name || ""); setFormGoalType(h.goalType || "daily"); setFormWeeklyTarget(h.weeklyTarget || 5); setFormNotes(h.notes || ""); setIsEditOpen(true); };
 
-  const submitAdd = () => {
+  const submitAdd = async () => {
     if (!formName.trim()) return;
-    setHabits((p) => [{ id: Date.now(), name: formName.trim(), goalType: formGoalType, weeklyTarget: Number(formWeeklyTarget) || 1, notes: formNotes.trim(), completions: [], createdAt: Date.now() }, ...p]);
+    const newHabit = { name: formName.trim(), goalType: formGoalType, weeklyTarget: Number(formWeeklyTarget) || 1, notes: formNotes.trim(), completions: [] };
     setIsAddOpen(false); resetForm();
+    try {
+      const added = await apiAddHabit(newHabit);
+      setHabits((p) => [added, ...p]);
+    } catch (e) {
+      alert("Failed to add habit.");
+    }
   };
-  const submitEdit = () => {
-    if (!editingId || !formName.trim()) return;
-    setHabits((p) => p.map((h) => h.id === editingId ? { ...h, name: formName.trim(), goalType: formGoalType, weeklyTarget: Number(formWeeklyTarget) || 1, notes: formNotes.trim() } : h));
-    setIsEditOpen(false); resetForm();
-  };
-  const deleteHabit = (id) => { setHabits((p) => p.filter((h) => h.id !== id)); if (editingId === id) setEditingId(null); };
 
-  const markDone = (id) => setHabits((p) => p.map((h) => {
-    if (h.id !== id) return h;
-    const s = new Set(h.completions || []); s.add(todayYMD);
-    return { ...h, completions: [...s].sort() };
-  }));
-  const undoDone = (id) => setHabits((p) => p.map((h) => {
-    if (h.id !== id) return h;
-    const s = new Set(h.completions || []); s.delete(todayYMD);
-    return { ...h, completions: [...s].sort() };
-  }));
+  const submitEdit = async () => {
+    if (!editingId || !formName.trim()) return;
+    const updated = { name: formName.trim(), goalType: formGoalType, weeklyTarget: Number(formWeeklyTarget) || 1, notes: formNotes.trim() };
+    const prevHabits = [...habits];
+    
+    // Optimistic update
+    setHabits((p) => p.map((h) => h.id === editingId ? { ...h, ...updated } : h));
+    setIsEditOpen(false); resetForm();
+    
+    try {
+      await apiUpdateHabit(editingId, updated);
+    } catch (e) {
+      setHabits(prevHabits);
+      alert("Failed to update habit.");
+    }
+  };
+
+  const deleteHandler = async (id) => {
+    const prevHabits = [...habits];
+    // Optimistic delete
+    setHabits((p) => p.filter((h) => h.id !== id));
+    if (editingId === id) setEditingId(null);
+    try {
+      await apiDeleteHabit(id);
+    } catch (e) {
+      setHabits(prevHabits);
+      alert("Failed to delete habit.");
+    }
+  };
+
+  const markDone = async (id) => {
+    const habit = habits.find((h) => h.id === id);
+    if (!habit) return;
+    const s = new Set(habit.completions || []);
+    s.add(todayYMD);
+    const newCompletions = [...s].sort();
+    
+    setHabits((p) => p.map((h) => h.id === id ? { ...h, completions: newCompletions } : h));
+    try {
+      await apiUpdateHabit(id, { ...habit, completions: newCompletions });
+    } catch (e) {
+      setHabits((p) => p.map((h) => h.id === id ? { ...h, completions: habit.completions } : h));
+    }
+  };
+
+  const undoDone = async (id) => {
+    const habit = habits.find((h) => h.id === id);
+    if (!habit) return;
+    const s = new Set(habit.completions || []);
+    s.delete(todayYMD);
+    const newCompletions = [...s].sort();
+    
+    setHabits((p) => p.map((h) => h.id === id ? { ...h, completions: newCompletions } : h));
+    try {
+      await apiUpdateHabit(id, { ...habit, completions: newCompletions });
+    } catch (e) {
+      setHabits((p) => p.map((h) => h.id === id ? { ...h, completions: habit.completions } : h));
+    }
+  };
 
   const weekProg = (h) => {
     if (h.goalType !== "weekly") return null;
@@ -228,7 +275,7 @@ export default function Habits() {
                     {h.goalType === "daily" ? "Daily habit" : `${wp?.target || 0}x / week`}
                   </p>
                 </div>
-                <HabitMenu onEdit={() => openEdit(h)} onDelete={() => deleteHabit(h.id)} />
+                <HabitMenu onEdit={() => openEdit(h)} onDelete={() => deleteHandler(h.id)} />
               </div>
 
               {h.notes && <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginTop: "var(--space-2)" }}>{h.notes}</p>}

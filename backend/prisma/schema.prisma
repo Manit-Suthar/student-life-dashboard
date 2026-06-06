@@ -16,6 +16,8 @@ model User {
   assignments    Assignment[]
   studyMaterials StudyMaterial[]
   inventoryItems InventoryItem[]
+  tasks          Task[]
+  habits         Habit[]
 }
 
 model Assignment {
@@ -50,4 +52,28 @@ model InventoryItem {
   location  String
   userId    String
   user      User   @relation(fields: [userId], references: [id])
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  due         String?
+  status      String   @default("pending")
+  priority    String   @default("Medium")
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Habit {
+  id           String   @id @default(uuid())
+  name         String
+  goalType     String   @default("daily")
+  weeklyTarget Int      @default(5)
+  notes        String?
+  completions  String   @default("[]")
+  createdAt    DateTime @default(now())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
 }
