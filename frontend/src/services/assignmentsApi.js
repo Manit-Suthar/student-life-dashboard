@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000/api/assignments";
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/assignments` : "http://localhost:5000/api/assignments";
 
 // Helper function to handle API errors
 async function handleResponse(response) {
