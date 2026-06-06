@@ -14,7 +14,7 @@ const getHeaders = () => {
   if (!token) throw new Error("No token, authorization denied");
   return {
     "Content-Type": "application/json",
-    "x-auth-token": token,
+    "Authorization": `Bearer ${token}`
   };
 };
 
