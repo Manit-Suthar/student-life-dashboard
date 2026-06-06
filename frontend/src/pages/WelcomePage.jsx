@@ -18,7 +18,7 @@ function WelcomePage() {
       title: "Study Materials",
       description: "Organize and access your study resources, notes, and learning materials.",
       features: ["Resource Library", "Quick Search", "Category Organization"],
-      available: false,
+      available: true,
       path: "/study"
     },
     {
@@ -26,7 +26,7 @@ function WelcomePage() {
       title: "Inventory",
       description: "Manage your study equipment, books, and supplies efficiently.",
       features: ["Item Tracking", "Usage Analytics", "Smart Reminders"],
-      available: false,
+      available: true,
       path: "/inventory"
     },
     {
@@ -34,7 +34,7 @@ function WelcomePage() {
       title: "Productivity",
       description: "Boost your productivity with time tracking and study session management.",
       features: ["Time Tracking", "Study Sessions", "Performance Analytics"],
-      available: false,
+      available: true,
       path: "/productivity"
     }
   ];

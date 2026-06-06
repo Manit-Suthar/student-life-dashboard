@@ -1,131 +1,80 @@
-// Temporary in-memory storage
-let assignments = [];
+const prisma = require("../../prismaClient");
 
-// Utility function to generate unique IDs
-const generateId = () => Date.now().toString();
-
-// Create a new assignment
-exports.createAssignment = (req, res) => {
-  const {
-    title,
-    subject = "General",
-    dueDate,
-    priority = "Medium",
-    references = [],
-  } = req.body;
-
-  if (!title || !dueDate) {
-    return res.status(400).json({
-      message: "Title and due date are required",
-    });
+const getAssignments = async (req, res) => {
+  try {
+    const assignments = await prisma.assignment.findMany({ where: { userId: req.userId } });
+    const parsedAssignments = assignments.map((a) => ({
+      ...a,
+      references: a.references ? JSON.parse(a.references) : []
+    }));
+    res.json(parsedAssignments);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-
-  const newAssignment = {
-    id: generateId(),
-    title,
-    subject,
-    dueDate,
-    priority,
-    status: "pending",
-    references,
-    createdAt: new Date(),
-  };
-
-  assignments.push(newAssignment);
-
-  res.status(201).json(newAssignment);
 };
 
-// Get all assignments
-exports.getAssignments = (req, res) => {
-  res.json(assignments);
+const createAssignment = async (req, res) => {
+  try {
+    const { title, subject, dueDate, priority, status, references } = req.body;
+    const assignment = await prisma.assignment.create({
+      data: {
+        title, subject, dueDate, priority, status, userId: req.userId,
+        references: references ? JSON.stringify(references) : "[]"
+      }
+    });
+    res.status(201).json({ ...assignment, references: references || [] });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-// Full update of assignment
-exports.updateAssignment = (req, res) => {
-  const { id } = req.params;
-  const { title, subject, dueDate, priority, status, references } = req.body;
-
-  const assignmentIndex = assignments.findIndex(a => a.id === id);
-
-  if (assignmentIndex === -1) {
-    return res.status(404).json({
-      message: "Assignment not found",
+const updateAssignment = async (req, res) => {
+  try {
+    const { title, subject, dueDate, priority, status, references } = req.body;
+    const assignment = await prisma.assignment.updateMany({
+      where: { id: req.params.id, userId: req.userId },
+      data: {
+        title, subject, dueDate, priority, status,
+        references: references ? JSON.stringify(references) : "[]"
+      }
     });
+    if (assignment.count === 0) return res.status(404).json({ message: "Not found" });
+    res.json({ message: "Updated" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-
-  // Validate required fields
-  if (!title || !dueDate) {
-    return res.status(400).json({
-      message: "Title and due date are required",
-    });
-  }
-
-  // Validate status if provided
-  if (status && !["pending", "submitted"].includes(status)) {
-    return res.status(400).json({
-      message: "Invalid status",
-    });
-  }
-
-  // Validate priority if provided
-  if (priority && !["High", "Medium", "Low"].includes(priority)) {
-    return res.status(400).json({
-      message: "Invalid priority",
-    });
-  }
-
-  // Update assignment
-  assignments[assignmentIndex] = {
-    ...assignments[assignmentIndex],
-    title: title || assignments[assignmentIndex].title,
-    subject: subject || assignments[assignmentIndex].subject,
-    dueDate: dueDate || assignments[assignmentIndex].dueDate,
-    priority: priority || assignments[assignmentIndex].priority,
-    status: status || assignments[assignmentIndex].status,
-    references: references || assignments[assignmentIndex].references,
-  };
-
-  res.json(assignments[assignmentIndex]);
 };
 
-// Delete assignment
-exports.deleteAssignment = (req, res) => {
-  const { id } = req.params;
-
-  const assignmentIndex = assignments.findIndex(a => a.id === id);
-
-  if (assignmentIndex === -1) {
-    return res.status(404).json({
-      message: "Assignment not found",
+const updateAssignmentStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const assignment = await prisma.assignment.updateMany({
+      where: { id: req.params.id, userId: req.userId },
+      data: { status }
     });
+    if (assignment.count === 0) return res.status(404).json({ message: "Not found" });
+    res.json({ message: "Status updated" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-
-  assignments.splice(assignmentIndex, 1);
-
-  res.status(204).send();
 };
 
-// Update assignment status
-exports.updateAssignmentStatus = (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  const assignment = assignments.find(a => a.id === id);
-
-  if (!assignment) {
-    return res.status(404).json({
-      message: "Assignment not found",
+const deleteAssignment = async (req, res) => {
+  try {
+    const assignment = await prisma.assignment.deleteMany({
+      where: { id: req.params.id, userId: req.userId }
     });
+    if (assignment.count === 0) return res.status(404).json({ message: "Not found" });
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
+};
 
-  if (!["pending", "submitted"].includes(status)) {
-    return res.status(400).json({
-      message: "Invalid status",
-    });
-  }
-
-  assignment.status = status;
-
-  res.json(assignment);
+module.exports = {
+  getAssignments,
+  createAssignment,
+  updateAssignment,
+  deleteAssignment,
+  updateAssignmentStatus,
 };

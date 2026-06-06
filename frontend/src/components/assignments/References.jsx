@@ -23,13 +23,13 @@ function References({ references = [], onChange, readOnly = false }) {
 
   const handleAddReference = () => {
     const newErrors = {};
-    
+
     if (!newReference.url.trim()) {
       newErrors.url = "URL is required";
     } else if (!validateUrl(newReference.url)) {
       newErrors.url = "Please enter a valid URL";
     }
-    
+
     if (!newReference.label.trim()) {
       newErrors.label = "Label is required";
     }
@@ -99,11 +99,11 @@ function References({ references = [], onChange, readOnly = false }) {
             className="reference-link"
             title={ref.url}
           >
-            <img 
-              src={getUrlFavicon(ref.url)} 
+            <img
+              src={getUrlFavicon(ref.url)}
               alt=""
-              style={{ 
-                width: "14px", 
+              style={{
+                width: "14px",
                 height: "14px",
                 marginRight: "var(--spacing-1)",
                 borderRadius: "2px"
@@ -124,8 +124,8 @@ function References({ references = [], onChange, readOnly = false }) {
       {/* Existing References */}
       {references.length > 0 && (
         <div style={{ marginBottom: "var(--spacing-4)" }}>
-          <div style={{ 
-            fontSize: "var(--font-size-sm)", 
+          <div style={{
+            fontSize: "var(--font-size-sm)",
             fontWeight: "500",
             color: "var(--text-secondary)",
             marginBottom: "var(--spacing-3)"
@@ -147,11 +147,11 @@ function References({ references = [], onChange, readOnly = false }) {
                   transition: "all var(--transition-normal)"
                 }}
               >
-                <img 
-                  src={getUrlFavicon(ref.url)} 
+                <img
+                  src={getUrlFavicon(ref.url)}
                   alt=""
-                  style={{ 
-                    width: "16px", 
+                  style={{
+                    width: "16px",
                     height: "16px",
                     borderRadius: "2px",
                     flexShrink: 0
@@ -161,8 +161,8 @@ function References({ references = [], onChange, readOnly = false }) {
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ 
-                    fontSize: "var(--font-size-sm)", 
+                  <div style={{
+                    fontSize: "var(--font-size-sm)",
                     fontWeight: "500",
                     color: "var(--text-primary)",
                     marginBottom: "2px",
@@ -172,8 +172,8 @@ function References({ references = [], onChange, readOnly = false }) {
                   }}>
                     {ref.label}
                   </div>
-                  <div style={{ 
-                    fontSize: "var(--font-size-xs)", 
+                  <div style={{
+                    fontSize: "var(--font-size-xs)",
                     color: "var(--text-muted)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -215,18 +215,18 @@ function References({ references = [], onChange, readOnly = false }) {
 
       {/* Add New Reference Form */}
       <div>
-        <div style={{ 
-          fontSize: "var(--font-size-sm)", 
+        <div style={{
+          fontSize: "var(--font-size-sm)",
           fontWeight: "500",
           color: "var(--text-secondary)",
           marginBottom: "var(--spacing-3)"
         }}>
-          Add Reference Link
+          Add Reference Name and Link
         </div>
-        
-        <div style={{ 
-          display: "flex", 
-          flexDirection: "column", 
+
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
           gap: "var(--spacing-3)"
         }}>
           <div>
@@ -240,8 +240,8 @@ function References({ references = [], onChange, readOnly = false }) {
               style={{ fontSize: "var(--font-size-sm)" }}
             />
             {errors.label && (
-              <div style={{ 
-                color: "var(--error)", 
+              <div style={{
+                color: "var(--error)",
                 fontSize: "var(--font-size-xs)",
                 marginTop: "var(--spacing-1)"
               }}>
@@ -261,8 +261,8 @@ function References({ references = [], onChange, readOnly = false }) {
               style={{ fontSize: "var(--font-size-sm)" }}
             />
             {errors.url && (
-              <div style={{ 
-                color: "var(--error)", 
+              <div style={{
+                color: "var(--error)",
                 fontSize: "var(--font-size-xs)",
                 marginTop: "var(--spacing-1)"
               }}>
@@ -285,7 +285,7 @@ function References({ references = [], onChange, readOnly = false }) {
       </div>
 
       {/* Style for error state */}
-      <style jsx>{`
+      <style jsx="true">{`
         .form-input.error {
           border-color: var(--error);
           box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);

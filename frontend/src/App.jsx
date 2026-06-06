@@ -1,12 +1,21 @@
-import { useState, useEffect } from "react";
-import { Routes, Route, useLocation, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useContext } from "react";
+import { Routes, Route, useLocation, useNavigate, Link, Navigate } from "react-router-dom";
 import { BookOpen, BarChart3, ClipboardList, BookMarked, Package, Zap, Moon, Sun, ChevronDown, LayoutDashboard, ListTodo, Repeat2 } from "lucide-react";
 
-import WelcomePage from "./pages/WelcomePage";
+import { AuthContext } from "./context/AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Assignments from "./pages/Assignments";
 import StudyMaterials from "./pages/StudyMaterials";
 import Inventory from "./pages/Inventory";
+
+function ProtectedRoute({ children }) {
+  const { token, loading } = useContext(AuthContext);
+  if (loading) return <div>Loading...</div>;
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
 
 import ProductivityDashboard from "./features/productivity/pages/Dashboard";
 import Tasks from "./features/productivity/pages/Tasks";
@@ -20,6 +29,7 @@ function AppLayout() {
   const [darkMode, setDarkMode] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { token, logout } = useContext(AuthContext);
 
   // Apply theme
   useEffect(() => {
@@ -127,11 +137,17 @@ function AppLayout() {
           })}
         </nav>
 
-        <div className="top-nav-right">
+        <div className="top-nav-right" style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
+          {token && (
+            <button className="btn btn-secondary btn-sm" onClick={logout}>
+              Sign out
+            </button>
+          )}
           <button
             className="theme-toggle"
             onClick={toggleDarkMode}
             title="Toggle theme"
+            style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
           >
             {darkMode ? <Moon size={18} /> : <Sun size={18} />}
           </button>
@@ -142,15 +158,18 @@ function AppLayout() {
       <main className="main">
         <div className="content">
           <Routes>
-            <Route path="/" element={<WelcomePage />} />
-            <Route path="/assignments" element={<Dashboard />} />
-            <Route path="/assignments/list" element={<Assignments />} />
-            <Route path="/study" element={<StudyMaterials />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/productivity" element={<ProductivityDashboard />} />
-            <Route path="/productivity/tasks" element={<Tasks />} />
-            <Route path="/productivity/habits" element={<Habits />} />
-            <Route path="/productivity/analytics" element={<Analytics />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Navigate to="/assignments" replace />} />
+            
+            <Route path="/assignments" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/assignments/list" element={<ProtectedRoute><Assignments /></ProtectedRoute>} />
+            <Route path="/study" element={<ProtectedRoute><StudyMaterials /></ProtectedRoute>} />
+            <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
+            <Route path="/productivity" element={<ProtectedRoute><ProductivityDashboard /></ProtectedRoute>} />
+            <Route path="/productivity/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+            <Route path="/productivity/habits" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
+            <Route path="/productivity/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           </Routes>
         </div>
       </main>

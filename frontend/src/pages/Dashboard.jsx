@@ -132,7 +132,7 @@ function Dashboard() {
               <div className="stat-number">{pendingAssignments}</div>
               <div className="stat-label">Pending</div>
             </div>
-            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}>
+            <div className="stat-icon" style={{ background: "var(--warning-bg)", color: "var(--warning)" }}>
               <Clock size={22} />
             </div>
           </div>
@@ -144,7 +144,7 @@ function Dashboard() {
               <div className="stat-number">{submittedAssignments}</div>
               <div className="stat-label">Completed</div>
             </div>
-            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}>
+            <div className="stat-icon" style={{ background: "var(--success-bg)", color: "var(--success)" }}>
               <CheckCircle2 size={22} />
             </div>
           </div>
@@ -156,7 +156,7 @@ function Dashboard() {
               <div className="stat-number">{overdueAssignments}</div>
               <div className="stat-label">Overdue</div>
             </div>
-            <div className="stat-icon" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" }}>
+            <div className="stat-icon" style={{ background: "var(--error-bg)", color: "var(--error)" }}>
               <AlertTriangle size={22} />
             </div>
           </div>
@@ -198,8 +198,8 @@ function Dashboard() {
                 {/* Gradient definition */}
                 <defs>
                   <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
+                    <stop offset="0%" stopColor="var(--text-primary)" />
+                    <stop offset="100%" stopColor="var(--text-muted)" />
                   </linearGradient>
                 </defs>
               </svg>
@@ -267,7 +267,7 @@ function Dashboard() {
                 color: "var(--text-secondary)"
               }}>
                 <div style={{ marginBottom: "var(--space-2)", opacity: 0.5 }}>
-                  <PartyPopper size={32} style={{ margin: "0 auto" }} />
+                  <CheckCircle2 size={32} style={{ margin: "0 auto" }} />
                 </div>
                 <div>No upcoming deadlines</div>
                 <div style={{ fontSize: "0.875rem", marginTop: "var(--space-1)" }}>

@@ -6,8 +6,8 @@
 
 /* ── Productivity Dashboard ── */
 .prod-hero {
-    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
-    border: 1px solid var(--glass-border);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     padding: var(--space-6) var(--space-8);
     margin-bottom: var(--space-6);
@@ -46,7 +46,7 @@
 .prod-score-bar-fill {
     height: 100%;
     border-radius: var(--radius-lg);
-    background: var(--gradient-primary);
+    background: var(--primary);
     transition: width 700ms ease;
 }
 
@@ -86,7 +86,7 @@
 .prod-streak-fill {
     height: 100%;
     border-radius: var(--radius-lg);
-    background: var(--gradient-primary);
+    background: var(--primary);
     transition: width 600ms ease-out;
 }
 
@@ -115,7 +115,7 @@
 
 .prod-done-btn.completed {
     background: var(--success);
-    color: white;
+    color: var(--text-primary);
     border-color: var(--success);
 }
 

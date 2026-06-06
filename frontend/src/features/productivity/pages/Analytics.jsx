@@ -209,7 +209,7 @@ export default function Analytics() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-6)", flexWrap: "wrap", gap: "var(--space-4)" }}>
         <div>
-          <h1 style={{ fontSize: "var(--font-size-3xl)", fontWeight: 700, marginBottom: "var(--space-2)", background: "linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Analytics</h1>
+          <h1 style={{ fontSize: "var(--font-size-3xl)", fontWeight: 700, marginBottom: "var(--space-2)", color: "var(--text-primary)" }}>Analytics</h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.9375rem" }}>Track your productivity and habit consistency</p>
         </div>
         <div style={{ display: "flex", gap: "var(--space-2)", background: "var(--bg-glass)", padding: "var(--space-1)", borderRadius: "var(--radius-xl)", border: "1px solid var(--glass-border)" }}>
@@ -226,7 +226,7 @@ export default function Analytics() {
                 borderRadius: "var(--radius-lg)",
                 border: "none",
                 background: range === r.key ? "var(--primary)" : "transparent",
-                color: range === r.key ? "white" : "var(--text-secondary)",
+                color: range === r.key ? "var(--bg-primary)" : "var(--text-secondary)",
                 fontSize: "0.8125rem",
                 fontWeight: 500,
                 cursor: "pointer",

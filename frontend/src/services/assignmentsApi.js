@@ -11,7 +11,11 @@ async function handleResponse(response) {
 
 // Get all assignments
 export async function getAssignments() {
-  const response = await fetch(API_BASE_URL);
+  const response = await fetch(API_BASE_URL, {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
+    }
+  });
   return handleResponse(response);
 }
 
@@ -21,6 +25,7 @@ export async function addAssignment(data) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
     body: JSON.stringify(data),
   });
@@ -33,6 +38,7 @@ export async function updateAssignment(id, data) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
     body: JSON.stringify(data),
   });
@@ -45,6 +51,7 @@ export async function updateAssignmentStatus(id, status) {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
     },
     body: JSON.stringify({ status }),
   });
@@ -55,6 +62,9 @@ export async function updateAssignmentStatus(id, status) {
 export async function deleteAssignment(id) {
   const response = await fetch(`${API_BASE_URL}/${id}`, {
     method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("token")}`
+    }
   });
   
   // Delete operations typically return 204 No Content

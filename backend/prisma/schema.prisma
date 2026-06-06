@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  name           String
+  createdAt      DateTime        @default(now())
+  assignments    Assignment[]
+  studyMaterials StudyMaterial[]
+  inventoryItems InventoryItem[]
+}
+
+model Assignment {
+  id       String @id @default(uuid())
+  title    String
+  subject  String
+  dueDate  String
+  status   String
+  priority   String
+  references String @default("[]")
+  userId     String
+  user     User   @relation(fields: [userId], references: [id])
+}
+
+model StudyMaterial {
+  id          String @id @default(uuid())
+  title       String
+  subject     String
+  type        String
+  url         String
+  description String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+}
+
+model InventoryItem {
+  id        String @id @default(uuid())
+  name      String
+  category  String
+  quantity  Int
+  condition String
+  location  String
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+}
